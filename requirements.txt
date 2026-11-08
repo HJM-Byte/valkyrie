@@ -1,0 +1,7 @@
+# 核心依赖：桌面、网页、识海、文字对话、LLM 调用
+# 安装：powershell -ExecutionPolicy Bypass -File .\bootstrap.ps1
+numpy==2.5.4
+Pillow==13.0.0
+requests==2.34.2
+aiohttp==3.14.5
+PyYAML==6.0.3

@@ -1,0 +1,34 @@
+﻿ESP32 引脚,网络,方向,用途,备注 / 限制
+GPIO0,KEY_BOOT,输入,下载模式,DevKitC 板载 BOOT；运行时不要占用
+GPIO1,PWR_KEY_SENSE,输入,电源键检测,Q1 漏极；10k 上拉；KEY 经 100k 到栅极
+GPIO2,KEY_MUTE,输入,静音键,内部上拉；按下 GND
+GPIO3,LCD_DC,输出,屏幕 DC,JTAG strapping；屏幕模块 DC 不要强上拉
+GPIO4,I2C_SDA / CAM_SIOD,双向,I2C 数据,OV2640(0x30)+TCA9534(0x20)+INA226(0x40)
+GPIO5,I2C_SCL / CAM_SIOC,输出,I2C 时钟,2.2k 上拉到 3.3V
+GPIO6,CAM_VSYNC,输入,摄像头场同步,
+GPIO7,CAM_HREF,输入,摄像头行同步,
+GPIO8,CAM_D0,输入,摄像头数据 0,
+GPIO9,CAM_D1,输入,摄像头数据 1,
+GPIO10,CAM_D2,输入,摄像头数据 2,
+GPIO11,CAM_D3,输入,摄像头数据 3,
+GPIO12,CAM_D4,输入,摄像头数据 4,
+GPIO13,CAM_PCLK,输入,摄像头像素时钟,
+GPIO14,KEY_VOL,输入,音量键,内部上拉；按下 GND
+GPIO15,CAM_XCLK,输出,摄像头主时钟,20MHz
+GPIO16,CAM_D5,输入,摄像头数据 5,
+GPIO17,CAM_D6,输入,摄像头数据 6,
+GPIO18,CAM_D7,输入,摄像头数据 7,
+GPIO19,USB_D-,—,USB,保留，不要接
+GPIO20,USB_D+,—,USB,保留，不要接
+GPIO21,LCD_SCK,输出,屏幕 SPI 时钟,40MHz
+GPIO35/36/37,—,—,Octal PSRAM,禁止使用
+GPIO38,—,—,DevKitC v1.1 RGB LED,不拿来做功能脚
+GPIO39,I2S_MIC_DIN,输入,麦克风数据,JTAG 脚；本版不用 JTAG
+GPIO40,I2S_SPK_DOUT,输出,功放数据,JTAG 脚；本版不用 JTAG
+GPIO41,I2S_BCLK,输出,I2S 位时钟,麦克风+功放共用
+GPIO42,I2S_WS,输出,I2S 字时钟,麦克风+功放共用
+GPIO43,UART_TX,输出,调试串口,1×4 排针
+GPIO44,UART_RX,输入,调试串口,1×4 排针
+GPIO45/46,—,—,启动 strapping,底板不接、不上下拉
+GPIO47,LCD_MOSI,输出,屏幕 SPI MOSI,
+GPIO48,IP5306_KEY,输出,IP5306 心跳/软关机,经 1k 到 NPN 基极；屏幕 CS 已接地

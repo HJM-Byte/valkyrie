@@ -1,0 +1,94 @@
+# =============================================================================
+# Valkyrie / 瓦尔基里 — 发布用忽略清单
+# 原则：代码、模板、公开文档进仓库；密钥、个人数据、模型权重、备份、截图不进。
+# =============================================================================
+
+# --- 密钥与凭据 -------------------------------------------------------------
+.env
+.env.*
+!.env.example
+*.key
+*.pem
+*.p12
+*.pfx
+*.keystore
+*.jks
+data/breeze_key.txt
+data/pocket_token.txt
+
+# --- 运行时私有数据 ---------------------------------------------------------
+/data/
+/diary/
+/backups/
+/_tmp/
+/_tmp_selftest/
+/_selftest_tmp_*/
+/emo_*/
+/memory_prov_*/
+/probe2_*/
+/qy_*/
+/真实数据/
+*.db
+*.db-wal
+*.db-shm
+*.sqlite
+*.sqlite3
+*.log
+*.jsonl
+
+# --- 模型与二进制 -----------------------------------------------------------
+/models/
+*.onnx
+*.bin
+*.pt
+*.pth
+*.npz
+*.wav
+*.mp3
+*.mp4
+*.mov
+*.jpg
+*.jpeg
+*.webp
+# Android 壳首版不随公开仓库发布：含签名脚本、keystore 路径和个人包名。
+# 需要发布时先清理 build.ps1 的默认签名口令与包名，再移除这一行。
+/app/pocket_apk/
+*.apk
+
+# --- 个人截图、音频与旧文档 -------------------------------------------------
+/docs/
+/web/*
+!/web/sihai.html
+/web/*.bak*
+/web/*.bak_*
+
+# --- Python / 构建缓存 ------------------------------------------------------
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+build/
+dist/
+.venv/
+venv/
+
+# --- IDE / 系统 -------------------------------------------------------------
+.idea/
+.vscode/
+Thumbs.db
+Desktop.ini
+.DS_Store
+
+# --- 本地覆盖文件 -----------------------------------------------------------
+local.cmd
+local.env
+
+# 内部发布清单，含作者本机路径与未清理项，不进入公开仓库
+/OPEN_SOURCE.md
+
+# 含本机手机型号/开发板 MAC 的排障脚本，不进入公开仓库
+/tools/sync_phone_chat.py
+/tools/check_body_wifi.ps1

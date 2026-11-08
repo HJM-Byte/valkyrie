@@ -1,0 +1,336 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, interactive-widget=resizes-content">
+  <meta name="theme-color" content="#071013">
+  <meta name="color-scheme" content="dark">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="瓦尔基里">
+  <title>瓦尔基里 · 水镜</title>
+  <link rel="manifest" href="/manifest.webmanifest">
+  <link rel="icon" href="/icons/icon-192.png">
+  <link rel="apple-touch-icon" href="/icons/icon-192.png">
+  <link rel="stylesheet" href="/assets/app.css">
+</head>
+<body>
+  <div class="ambient" aria-hidden="true">
+    <div class="ambient-glow"></div>
+    <div class="ambient-tide"></div>
+  </div>
+
+  <div id="app" class="app">
+    <header class="topbar">
+      <button class="brand" type="button" data-nav="home" aria-label="回到首页">
+        <span class="brand-mark" aria-hidden="true">
+          <svg viewBox="0 0 32 32" fill="none">
+            <circle cx="16" cy="16" r="12.5" stroke="currentColor" stroke-width="1.2" opacity=".55"/>
+            <path d="M7 16.8c2.4-4.2 7.1-6.2 11.7-5.1 2 .5 3.7 1.6 4.8 3.1 1 1.3 1.4 2.7 1.2 4-2.7.6-4.8.2-6.8-1.2-3 3-8.5 3.2-10.9-.8Z" stroke="currentColor" stroke-width="1.25" stroke-linejoin="round"/>
+            <path d="M22.5 16.2c1.6-1.3 2.9-1.7 4.5-1.5-.8 1.6-1.8 2.7-3.3 3.4" stroke="currentColor" stroke-width="1.25" stroke-linecap="round"/>
+            <circle cx="11.6" cy="15.8" r=".85" fill="currentColor"/>
+          </svg>
+        </span>
+        <span class="brand-name">瓦尔基里</span>
+      </button>
+      <button id="statusChip" class="status-chip" type="button" data-nav="connect">
+        <i id="statusDot" class="status-dot" aria-hidden="true"></i>
+        <span id="statusLabel">还没接上</span>
+      </button>
+    </header>
+
+    <main id="main">
+      <section id="view-home" class="view" aria-label="她">
+        <div id="demoBadge" class="demo-badge" hidden>示例数据 · 不是她的真实记录</div>
+
+        <section class="hero" aria-labelledby="herName">
+          <button id="mirror" class="mirror" type="button" aria-label="打开她">
+            <span class="mirror-aura" aria-hidden="true"></span>
+            <span class="mirror-ring mirror-ring-a" aria-hidden="true"></span>
+            <span class="mirror-ring mirror-ring-b" aria-hidden="true"></span>
+            <span class="mirror-ring mirror-ring-c" aria-hidden="true"></span>
+            <span class="mirror-depth" aria-hidden="true"></span>
+            <span class="whale" aria-hidden="true">
+              <svg viewBox="0 0 140 140" fill="none">
+                <path d="M22 76.5c8.8-18.8 30.4-28.6 52.7-24.2 10.1 2 18.4 7.8 23.8 15.4 4.1 5.8 5.5 12.1 4.3 18.1-10.9 2.5-19.4 1.1-27.5-4.3-12.8 12.7-35.9 13.3-48.1 2.7-4.9-4.4-7-8.7-5.2-7.7Z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>
+                <path d="M99.6 72.7c6.3-5.6 12.1-7.6 18.4-6.8-3.2 7.2-7.7 11.8-14.3 15.1" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                <path d="M42 82.8c7.6 2.9 16.9 2.9 24.8-.7" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" opacity=".55"/>
+                <circle cx="43.2" cy="73.4" r="2.15" fill="currentColor"/>
+                <circle cx="51.2" cy="71.3" r=".9" fill="currentColor" opacity=".5"/>
+              </svg>
+            </span>
+            <span class="mirror-glow" aria-hidden="true"></span>
+          </button>
+
+          <div class="hero-copy">
+            <p class="hero-kicker">她在这台电脑里</p>
+            <h1 id="herName">瓦尔基里</h1>
+            <p id="stateText" class="state-text">正在找她。</p>
+            <p id="stateMeta" class="state-meta">第 — 天 · 精力 —</p>
+            <p id="stateQuiet" class="state-quiet" hidden></p>
+          </div>
+        </section>
+
+        <div class="home-side">
+          <div class="quick-row">
+            <button class="button button-primary" type="button" data-action="add-memory">
+              <span>记一笔</span>
+              <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M10 4.5v11M4.5 10h11" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+            </button>
+            <button id="chatButton" class="button button-quiet" type="button" data-action="chat">
+              <span>和她说一句</span>
+            </button>
+          </div>
+
+        <section id="growthSection" class="section growth-section" aria-labelledby="growthTitle" hidden>
+          <div class="section-head">
+            <h2 id="growthTitle">她最近在长成</h2>
+            <button class="text-button" type="button" data-nav="memory">看识海</button>
+          </div>
+          <div id="growthList" class="growth-list"></div>
+        </section>
+
+        <section class="section" aria-labelledby="recentTitle">
+          <div class="section-head">
+            <h2 id="recentTitle">最近的识海</h2>
+            <button class="text-button" type="button" data-nav="memory">全部</button>
+          </div>
+          <div id="homeMemories" class="memory-preview"></div>
+        </section>
+
+        <section class="section" aria-labelledby="factsTitle">
+          <div class="section-head">
+            <h2 id="factsTitle">她记住的你</h2>
+            <button class="text-button" type="button" data-action="add-fact">添加</button>
+          </div>
+          <div id="homeFacts" class="facts-preview"></div>
+        </section>
+        </div>
+
+        <p id="sleepNote" class="footer-note"></p>
+      </section>
+
+      <section id="view-dialogue" class="view view-dialogue" aria-label="对话" hidden>
+        <header class="page-head dialogue-head">
+          <div class="dialogue-kicker-row">
+            <p class="page-kicker">对话</p>
+            <div class="voice-tools">
+              <button id="voiceSelect" class="voice-select" type="button" aria-haspopup="dialog" aria-label="她的音色">寒蝉余音</button>
+              <button id="voiceToggle" class="voice-toggle" type="button" aria-pressed="true">声音 开</button>
+            </div>
+          </div>
+          <h1>她在听</h1>
+          <p id="dialogueSub" class="page-sub">直接说，或者把眼前的东西给她看。</p>
+        </header>
+
+        <p id="mediaWarn" class="media-warn" hidden></p>
+
+        <div id="chatLog" class="chat-log chat-log-page" role="log" aria-live="polite"></div>
+
+        <p id="chatHush" class="chat-hush" role="status" aria-live="polite" hidden></p>
+
+        <div id="recordBar" class="record-bar" hidden aria-live="polite">
+          <span class="record-dot" aria-hidden="true"></span>
+          <span id="recordTime" class="record-time">0.0s</span>
+          <span class="record-label">正在听，说完点结束</span>
+          <button id="stopRecord" class="record-stop" type="button">结束</button>
+        </div>
+
+        <form id="chatForm" class="chat-compose chat-compose-page">
+          <div class="compose-main">
+            <input id="chatInput" type="text" maxlength="1000" autocomplete="off"
+                   placeholder="说点什么" aria-label="对她说的话">
+            <button class="send-button" type="submit" aria-label="发送">
+              <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                <path d="M4.8 11.6 19 5.2c.8-.35 1.55.4 1.2 1.2l-6.4 14.2c-.4.85-1.6.8-1.9-.1l-1.65-5.2-5.2-1.65c-.9-.3-.95-1.5-.25-1.85Z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/>
+                <path d="m10.5 14.4 3.2-3.2" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+              </svg>
+            </button>
+          </div>
+          <div class="compose-tools">
+            <button id="cameraButton" class="compose-tool" type="button" aria-label="打开摄像头让她看">
+              <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                <path d="M4 8.5h3l1.4-2h7.2l1.4 2h3v10.5H4V8.5Z" stroke="currentColor" stroke-width="1.45" stroke-linejoin="round"/>
+                <circle cx="12" cy="13.5" r="3.2" stroke="currentColor" stroke-width="1.45"/>
+              </svg>
+              <span>让她看</span>
+            </button>
+            <button id="micButton" class="compose-tool mic-tool" type="button" aria-label="录一段话">
+              <span class="mic-rings" aria-hidden="true"></span>
+              <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                <rect x="9" y="3.5" width="6" height="11" rx="3" stroke="currentColor" stroke-width="1.45"/>
+                <path d="M5.8 11.5a6.2 6.2 0 0 0 12.4 0M12 17.7v2.8M8.8 20.5h6.4" stroke="currentColor" stroke-width="1.45" stroke-linecap="round"/>
+              </svg>
+              <span>说一句</span>
+            </button>
+            <span id="composeHint" class="compose-hint">声音只转成文字，照片只给这一轮看。</span>
+          </div>
+        </form>
+      </section>
+
+      <section id="view-memory" class="view" aria-label="识海" hidden>
+        <header class="page-head memory-head">
+          <div class="memory-head-copy">
+            <p class="page-kicker">识海</p>
+            <h1>她记得的事</h1>
+            <p id="memorySummary" class="page-sub">正在翻。</p>
+          </div>
+          <button class="memory-add" type="button" data-action="add-memory">记一笔</button>
+        </header>
+
+        <section id="meaningSection" class="meaning-section" hidden aria-labelledby="meaningTitle">
+          <div class="section-head">
+            <h2 id="meaningTitle">她理解的我们</h2>
+            <span class="section-kicker">已确认 · 只读</span>
+          </div>
+          <div id="meaningList" class="meaning-list"></div>
+          <p class="meaning-foot">确认、否定、撤回都在电脑的识海里做；手机这页不改它们。</p>
+        </section>
+
+        <section id="preAnswerSection" class="pre-answer-section" hidden aria-labelledby="preAnswerTitle">
+          <div class="section-head">
+            <h2 id="preAnswerTitle">她最近怎么接你</h2>
+            <span class="section-kicker">只改下一句</span>
+          </div>
+          <div id="preAnswerList" class="pre-answer-list"></div>
+        </section>
+
+        <section id="p3Section" class="meaning-section" hidden aria-labelledby="p3Title">
+          <div class="section-head">
+            <h2 id="p3Title">最近的关系气候</h2>
+            <span class="section-kicker">中速判断 · 只读</span>
+          </div>
+          <div id="p3List" class="meaning-list"></div>
+          <p class="meaning-foot">气候不是关系结论；未完成承诺只在条件满足时由她跟进一次。</p>
+        </section>
+
+        <div class="search-wrap">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="6.2" stroke="currentColor" stroke-width="1.5"/><path d="m15.7 15.7 4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+          <input id="memorySearch" type="search" autocomplete="off" placeholder="找一句话、一个人、一天" aria-label="搜索记忆">
+        </div>
+
+        <div class="filter-row" role="group" aria-label="筛选记忆">
+          <button class="filter is-active" type="button" data-filter="all">全部</button>
+          <button class="filter" type="button" data-filter="feeling">有情绪</button>
+          <button class="filter" type="button" data-filter="week">近七天</button>
+          <button class="filter" type="button" data-filter="wish">愿望与推测</button>
+        </div>
+
+        <div id="memoryList" class="timeline" aria-live="polite"></div>
+        <div class="list-foot">
+          <button id="loadMore" class="text-button" type="button" hidden>再往前翻</button>
+        </div>
+
+        <section class="section facts-section" aria-labelledby="factsPageTitle">
+          <div class="section-head">
+            <h2 id="factsPageTitle">她记住的你</h2>
+            <button class="text-button" type="button" data-action="add-fact">添加</button>
+          </div>
+          <div id="factsList" class="facts-list"></div>
+        </section>
+
+      </section>
+
+      <section id="view-connect" class="view" aria-label="连接" hidden>
+        <header class="page-head">
+          <p class="page-kicker">连接</p>
+          <h1>把她接过来</h1>
+          <p class="page-sub">同一间屋子，或者一根线。</p>
+        </header>
+
+        <section class="connection-card" aria-labelledby="connectionTitle">
+          <div class="connection-top">
+            <div>
+              <p class="connection-label" id="connectionTitle">现在的路</p>
+              <p id="connectionState" class="connection-state">还没连上</p>
+            </div>
+            <span id="connectionGlyph" class="connection-glyph" aria-hidden="true"></span>
+          </div>
+          <p id="connectionAddress" class="connection-address">—</p>
+          <div class="connection-actions">
+            <button id="testConnection" class="button button-primary button-small" type="button">检查连接</button>
+            <button id="copyAddress" class="button button-quiet button-small" type="button">复制地址</button>
+          </div>
+        </section>
+
+        <section class="section">
+          <div class="section-head">
+            <h2>配对码</h2>
+          </div>
+          <p class="section-note">第一次打开时输入。它只留在你的本机，不写到云端。</p>
+          <div class="code-row">
+            <input id="tokenInput" type="text" inputmode="numeric" autocomplete="one-time-code" maxlength="64" aria-label="配对码" placeholder="六位数字">
+            <button id="saveToken" class="button button-primary button-small" type="button">保存</button>
+          </div>
+        </section>
+
+        <section class="section">
+          <div class="section-head">
+            <h2>网页端</h2>
+            <span class="section-kicker">电脑浏览器</span>
+          </div>
+          <p class="section-note">双击电脑上的 <code>web.cmd</code>，或直接打开 <code>http://127.0.0.1:8766/</code>。它和手机看的是同一份识海，页面本身不存记忆。</p>
+          <button id="installWeb" class="button button-primary button-small" type="button" hidden>安装到桌面</button>
+          <p class="section-note">电脑登录后由看门狗托管；识海在 <code>memory.db</code>，每天自动备份到 <code>backups/web_auto</code>。</p>
+        </section>
+
+        <section class="section">
+          <div class="section-head">
+            <h2>Android App</h2>
+          </div>
+          <p class="section-note">把这扇窗装进手机。APK 很小，装完第一次打开填电脑地址；她的脑子仍在电脑上。</p>
+          <a class="button button-primary button-small" style="text-decoration:none" href="/download/valkyrie.apk" download="valkyrie-pocket.apk">下载 Android APK</a>
+        </section>
+
+        <section class="section">
+          <div class="section-head">
+            <h2>有线</h2>
+          </div>
+          <p class="section-note">Android 打开 USB 调试，电脑运行 <code>usb.cmd</code> 做端口反向转发；手机打开 <code>http://127.0.0.1:8766</code>。这条线不经过 Wi-Fi。</p>
+          <pre class="code-block">adb reverse tcp:8766 tcp:8766</pre>
+        </section>
+
+        <section class="section">
+          <div class="section-head">
+            <h2>无线</h2>
+          </div>
+          <p class="section-note">手机和电脑连同一个 Wi-Fi，电脑运行 <code>pocket.cmd --lan</code>，手机打开启动时打印的局域网地址。</p>
+        </section>
+
+        <section class="section">
+          <div class="section-head">
+            <h2>边界</h2>
+          </div>
+          <p class="section-note">她的脑子不在这部手机里。手机是窗、是手，不是她。关掉这个页面，她还在电脑上；USB 拔掉，识海还在原来的 <code>memory.db</code> 里。</p>
+        </section>
+      </section>
+    </main>
+
+    <nav class="tabbar" aria-label="主导航">
+      <button class="tab is-active" type="button" data-nav="home" aria-label="她">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3.8c-3.6 2.1-5.6 5.2-5.6 8.7 0 3.4 2.5 6.1 5.6 7.7 3.1-1.6 5.6-4.3 5.6-7.7 0-3.5-2-6.6-5.6-8.7Z" stroke="currentColor" stroke-width="1.45"/></svg>
+        <span>她</span>
+      </button>
+      <button class="tab" type="button" data-nav="dialogue" aria-label="对话">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4.5 6.3h15v9.2H9.4L5.2 19v-3.5H4.5V6.3Z" stroke="currentColor" stroke-width="1.45" stroke-linejoin="round"/><path d="M8 10.8h8M8 13.2h5" stroke="currentColor" stroke-width="1.45" stroke-linecap="round"/></svg>
+        <span>对话</span>
+      </button>
+      <button class="tab" type="button" data-nav="memory" aria-label="识海">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 5.5v13M10 7v10M14 5.5v13M18 9v7" stroke="currentColor" stroke-width="1.45" stroke-linecap="round"/></svg>
+        <span>识海</span>
+      </button>
+      <button class="tab" type="button" data-nav="connect" aria-label="连接">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9.2 14.8 14.8 9.2M7.6 10.9l-1.8 1.8a3.9 3.9 0 0 0 5.5 5.5l1.8-1.8M16.4 13.1l1.8-1.8a3.9 3.9 0 0 0-5.5-5.5l-1.8 1.8" stroke="currentColor" stroke-width="1.45" stroke-linecap="round"/></svg>
+        <span>连接</span>
+      </button>
+    </nav>
+  </div>
+
+  <div id="sheetRoot"></div>
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+  <pre id="bootError" class="boot-error" hidden></pre>
+
+  <script type="module" src="/assets/app.js"></script>
+</body>
+</html>

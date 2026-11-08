@@ -1,0 +1,18 @@
+# 语音、视觉与身体链路（在核心依赖之上）
+# 安装：powershell -ExecutionPolicy Bypass -File .\bootstrap.ps1 -Voice
+-r requirements.txt
+
+opencv-python==5.0.0.93
+sounddevice==0.5.6
+soundfile==0.14.0
+pygame==2.6.1
+faster-whisper==1.2.1
+onnxruntime==1.31.1
+sherpa-onnx==2.0.1
+edge-tts==7.3.1
+av==19.0.2
+# Windows 上没有现成 webrtcvad 轮子时用这个包；导入名仍是 webrtcvad
+webrtcvad-wheels>=2.0.14
+pyserial==3.5
+websockets==17.4
+huggingface-hub==2.3.0

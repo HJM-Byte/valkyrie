@@ -1,0 +1,7 @@
+# 开发/训练额外依赖
+-r requirements-voice.txt
+
+# 表情训练可选；普通运行不需要。
+# Windows CPU 版：
+#   pip install torch==2.15.0 --index-url https://download.pytorch.org/whl/cpu
+# 不要直接把 +cpu 版本写进普通 PyPI requirements，否则换环境会找不到发行版。

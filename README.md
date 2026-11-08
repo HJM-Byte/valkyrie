@@ -4,7 +4,7 @@
 
 这不是一个装完就能用的聊天 App。它更像一套可以拆开、替换、自己养的本地伙伴系统：LLM 和语音可以接自己的服务，记忆和数据留在自己的电脑上，身体（ESP32）是可选的。
 
-> 当前状态：可运行，Windows 优先，尚未做成一键安装包。第一次启动需要 Python、一个 LLM API Key，以及按需下载的本地模型。
+> 当前状态：可运行，Windows 优先。仓库带 Windows 一键安装脚本；第一次安装需要 Python、一个 LLM API Key，模型按需下载。
 
 ## 你会得到什么
 
@@ -32,17 +32,34 @@ git clone https://github.com/<your-name>/valkyrie.git C:\valkyrie
 cd C:\valkyrie
 ```
 
-### 2. 安装
+### 2. 一键安装
+
+双击 `install.cmd`。它会检查 Python 3.11+（没有时可用 winget 安装 3.13）、创建 `.venv`、安装核心依赖、生成 `.env`、询问一次 LLM API Key，并创建桌面和开始菜单快捷方式。
+
+```cmd
+:: 只装核心：桌面、网页、识海、LLM 调用
+install.cmd
+
+:: 需要麦克风、摄像头、本地语音时
+install.cmd -Voice
+
+:: 连可选模型一起下载（人脸 + faster-whisper，体积较大）
+install.cmd -Voice -Models
+```
+
+API Key 的输入不回显，也不会写进 `install.log`；只写入已被 Git 忽略的 `.env`。不想现在填可以回车跳过，之后编辑 `.env`。
+
+如果已经装过依赖，想手动控制每一步：
 
 ```powershell
-# 核心：桌面、网页、识海、LLM 调用
+# 核心
 powershell -ExecutionPolicy Bypass -File .\bootstrap.ps1
 
-# 需要语音/麦克风/本地 TTS 时再加
+# 语音/麦克风/本地 TTS
 powershell -ExecutionPolicy Bypass -File .\bootstrap.ps1 -Voice
 ```
 
-`bootstrap.ps1` 会创建 `.venv`、安装依赖，并在没有 `.env` 时从 `.env.example` 复制一份空模板。它不会下载模型，也不会写入任何 API Key。
+`bootstrap.ps1` 只创建 `.venv`、安装依赖并复制 `.env` 模板；不下载模型、不写入 Key。
 
 ### 3. 配置 Key
 
@@ -77,6 +94,7 @@ BREEZE_VOICE_ID=voc_wkzpcy2xxwch
 
 ```cmd
 start.cmd               :: 统一菜单
+install.cmd             :: 一键安装/补依赖
 desktop.cmd             :: 桌面主入口
 web.cmd                 :: 网页端 8766
 sihai.cmd               :: 识海页 8767
@@ -117,7 +135,9 @@ hardware/           可选的 ESP32 身体设计与接线资料
 web/sihai.html      识海网页视图
 PERSONA.md          默认人格提示词；每个人可以改成自己的那份
 .env.example        配置模板，不含真实 Key
-bootstrap.ps1       创建 .venv 并安装依赖
+install.cmd         Windows 一键安装入口
+install.ps1         安装器本体
+bootstrap.ps1       手动创建 .venv 并安装依赖
 data/               运行时数据；已被 Git 忽略
 models/             模型目录；已被 Git 忽略
 docs/               本地开发记录；默认不进入公开仓库
@@ -146,7 +166,7 @@ docs/               本地开发记录；默认不进入公开仓库
 
 **还没做：**
 
-- 一键安装器；首次配置仍需手动
+- 首次安装仍需自己提供一个 LLM API Key（安装器会引导）
 - macOS / Linux 的桌面端
 - 对所有第三方模型的授权再分发
 - 一个干净的、面向新用户的完整模型下载器

@@ -10,7 +10,7 @@
 4. 断言收到第二轮的 STT/LLM/tts stop。
 
     cd robot
-    C:\\robot\\venv\\Scripts\\python.exe -m tools.selftest_body_turnloop
+    python -m tools.selftest_body_turnloop
 """
 from __future__ import annotations
 

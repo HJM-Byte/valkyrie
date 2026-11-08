@@ -1,6 +1,6 @@
 """P4-B 生产入口自检：真实事件列表、建候选、建章节。
 
-    C:\\robot\\venv\\Scripts\\python.exe -m tools.selftest_p4b_entry
+    python -m tools.selftest_p4b_entry
 
 只用 data/acceptance/tmp/ 下的临时库，起一个本地 HTTP 服务，
 不碰生产 memory.db。重点不是“能写”，而是“没有来源就不写、不自动确认”。

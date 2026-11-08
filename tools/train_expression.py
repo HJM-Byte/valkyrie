@@ -1,12 +1,12 @@
 """表情图像模型训练：有 torch 走小 CNN，没有就用无依赖 numpy 基线。
 
 先采数据，再训练：
-    C:\\robot\\venv\\Scripts\\python.exe tools\\collect_face_data.py --label 开心 --allow-camera
-    C:\\robot\\venv\\Scripts\\python.exe tools\\train_expression.py --dry-run
-    C:\\robot\\venv\\Scripts\\python.exe tools\\train_expression.py --backend auto
+    python tools\\collect_face_data.py --label 开心 --allow-camera
+    python tools\\train_expression.py --dry-run
+    python tools\\train_expression.py --backend auto
 
 数据契约：`data/vision/faces_index.jsonl` + `data/vision/faces/<label>/*.jpg`
-模型契约：`C:\\robot\\models\\expression\\expression_mlp.npz`（W1/b1/W2/b2 +
+模型契约：`models\\expression\\expression_mlp.npz`（W1/b1/W2/b2 +
 labels + input_size），推理在 `app/expression.py`，不依赖训练脚本。
 
 注意：没有真实人脸数据时不要拿合成图冒充模型效果；`--self-test` 只验代码链路。

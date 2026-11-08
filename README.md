@@ -5,6 +5,8 @@
 这不是一个装完就能用的聊天 App。它更像一套可以拆开、替换、自己养的本地伙伴系统：LLM 和语音可以接自己的服务，记忆和数据留在自己的电脑上，身体（ESP32）是可选的。
 
 > 当前状态：可运行，Windows 优先。仓库带 Windows 一键安装脚本；第一次安装需要 Python、一个 LLM API Key，模型按需下载。
+>
+> 首个预发布：[v0.1.0](https://github.com/HJM-Byte/valkyrie/releases/tag/v0.1.0)。
 
 ## 你会得到什么
 
@@ -22,13 +24,15 @@
 
 - Windows 10/11
 - Python 3.11 或更高；实际验证过 Python 3.13.14
-- Git（或 GitHub Desktop）
+- Git（可选；不装 Git 也可以直接下载 ZIP）
 - 一个 OpenAI 兼容的 LLM API Key；默认示例是阿里云百炼的 `qwen3.8-flash`
 
 **把仓库放在纯 ASCII 路径下**，例如 `C:\valkyrie`。不要放在含中文或空格的用户目录里：OpenCV、onnxruntime 和 `pip` 在部分 Windows 组合下会读不了中文路径。代码会尽量兼容，但这是最省事的做法。
 
+不想装 Git 的话，在 GitHub 页面点 **Code → Download ZIP**，解压到 `C:\valkyrie` 后同样可以继续。
+
 ```powershell
-git clone https://github.com/<your-name>/valkyrie.git C:\valkyrie
+git clone https://github.com/HJM-Byte/valkyrie.git C:\valkyrie
 cd C:\valkyrie
 ```
 
@@ -191,7 +195,7 @@ docs/               本地开发记录；默认不进入公开仓库
 
 ## 许可证
 
-代码以 MIT 许可证发布，见 [LICENSE](LICENSE)。第三方依赖、模型和音色服务的授权不因本仓库的 MIT 许可证而改变；详见 [NOTICE.md](NOTICE.md)。
+代码以 MIT 许可证发布，见 [LICENSE](LICENSE)。第三方依赖、模型和音色服务的授权不因本仓库的 MIT 许可证而改变；详见 [NOTICE.md](NOTICE.md)。名称与角色形象不随代码授权，见 [TRADEMARK.md](TRADEMARK.md)。
 
 ## 项目状态
 

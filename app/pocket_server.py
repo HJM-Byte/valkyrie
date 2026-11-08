@@ -21,8 +21,8 @@
 - 不自动开口：只有 `--chat` 才启用 `/api/chat`，且发送一句才会叫醒她。
 
 启动：
-    C:\\robot\\venv\\Scripts\\python.exe -m app.pocket_server --lan
-    C:\\robot\\venv\\Scripts\\python.exe -m app.pocket_server --demo --lan
+    python -m app.pocket_server --lan
+    python -m app.pocket_server --demo --lan
 """
 from __future__ import annotations
 

@@ -2,7 +2,7 @@
 """生成瓦尔基里身体底板 v1 的框图与机械布局图（Pillow，无网络依赖）。
 
 运行：
-  C:\\robot\\venv\\Scripts\\python.exe make_diagrams.py
+  python make_diagrams.py
 输出：system_block.png / board_top.png / board_bottom.png
 """
 from __future__ import annotations

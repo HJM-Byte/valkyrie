@@ -9,7 +9,7 @@
 ## 本地环境
 
 ```powershell
-git clone https://github.com/<your-name>/valkyrie.git C:\valkyrie
+git clone https://github.com/HJM-Byte/valkyrie.git C:\valkyrie
 cd C:\valkyrie
 powershell -ExecutionPolicy Bypass -File .\bootstrap.ps1 -Voice
 copy .env.example .env

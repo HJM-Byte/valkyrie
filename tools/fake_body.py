@@ -1,7 +1,7 @@
 """假 ESP32 身体：走一遍真实 OTA -> WebSocket hello，给 A2 协议自检用。
 
     cd robot
-    C:\\robot\\venv\\Scripts\\python.exe -m tools.fake_body --seconds 5
+    python -m tools.fake_body --seconds 5
 
 它不会写 memory.db、不会启动 Chat；只验证协议与服务端。
 真板子联调时用 `tools.fake_body` 对 `app.xiaozhi_server`，真身体走 `desktop.py --body`。

@@ -1,7 +1,7 @@
 """采集日常物体照片（手机/椅子/凳子）：保存整帧，供物体分类与验收。
 
 用法：
-    C:\\robot\\venv\\Scripts\\python.exe tools\\collect_object_data.py ^
+    python tools\\collect_object_data.py ^
         --allow-camera --session 20261029_phone_a --label 手机 --per-label 30 --seconds 20
 """
 from __future__ import annotations

@@ -1,6 +1,6 @@
 """自然回应与沉默闸门验收：N01–N12。
 
-    C:\\robot\\venv\\Scripts\\python.exe -m tools.selftest_response_gate
+    python -m tools.selftest_response_gate
 
 只用 `data/acceptance/tmp/` 下的临时库和 fake LLM；不打开生产 memory.db /
 learn.db / p3.db / school.db。重点不是“她像不像人”，而是：

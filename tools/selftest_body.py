@@ -1,7 +1,7 @@
 """A2 协议自检：OTA、hello、设备去重、Opus 编解码。
 
     cd robot
-    C:\\robot\\venv\\Scripts\\python.exe -m tools.selftest_body
+    python -m tools.selftest_body
 
 不启动真 Chat、不打开麦克风、不写 memory.db；测试结束真实数据不变。
 """

@@ -6,9 +6,9 @@
   - 预检不写她的记忆、不消费休眠记录、不叫醒她。
 
 用法（摄像头到货后）：
-    C:\\robot\\venv\\Scripts\\python.exe tools\\vision_preflight.py --self-test
-    C:\\robot\\venv\\Scripts\\python.exe tools\\vision_preflight.py --enumerate
-    C:\\robot\\venv\\Scripts\\python.exe tools\\vision_preflight.py --camera --snapshot --expect-face
+    python tools\\vision_preflight.py --self-test
+    python tools\\vision_preflight.py --enumerate
+    python tools\\vision_preflight.py --camera --snapshot --expect-face
 """
 from __future__ import annotations
 

@@ -2,7 +2,7 @@
 """桌面端五视图与扇区布局的最小自检（不创建 Tk 窗口）。
 
 跑法（仓库根目录）：
-    C:\\robot\\venv\\Scripts\\python.exe tools\\selftest_desktop_views.py
+    python tools\\selftest_desktop_views.py
 """
 from __future__ import annotations
 

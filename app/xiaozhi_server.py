@@ -3,7 +3,7 @@
 只用于“不刷机、先让板子连到 PC”的路线。启动：
 
     cd robot
-    C:\\robot\\venv\\Scripts\\python.exe -m app.xiaozhi_server --host 0.0.0.0 --port 8768
+    python -m app.xiaozhi_server --host 0.0.0.0 --port 8768
 
 它只做协议层：
 - GET/POST /xiaozhi/ota/ 返回 websocket + server_time；

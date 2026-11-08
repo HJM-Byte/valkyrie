@@ -2,8 +2,8 @@
 """把 7 条原文可用的 approved 补成 verified，5 条 feed 留作 reference。
 
 用法（在 robot 目录）：
-  C:\\robot\\venv\\Scripts\\python.exe -m tools.repair_knowledge --dry-run
-  C:\\robot\\venv\\Scripts\\python.exe -m tools.repair_knowledge --apply
+  python -m tools.repair_knowledge --dry-run
+  python -m tools.repair_knowledge --apply
 
 约束：
 - 先校验所有 evidence 都是原文连续子串，任何一条不过就整体不写；

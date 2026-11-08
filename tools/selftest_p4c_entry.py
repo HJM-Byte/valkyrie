@@ -1,6 +1,6 @@
 """P4-C 生产入口自检：识海人格视图的读取、候选、确认、否定与回滚。
 
-    C:\\robot\\venv\\Scripts\\python.exe -m tools.selftest_p4c_entry
+    python -m tools.selftest_p4c_entry
 
 只用 data/acceptance/tmp/ 下的临时库，起本地 HTTP 服务，不碰生产 memory.db。
 验证的是“入口不会绕过证据门槛、不会自动确认、回滚不删历史”。

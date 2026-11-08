@@ -10,8 +10,8 @@
   - 按 session 分组，训练时同一 session 不会同时进训练/验证。
 
 用法：
-    C:\\robot\\venv\\Scripts\\python.exe tools\\collect_expression_set.py --guide
-    C:\\robot\\venv\\Scripts\\python.exe tools\\collect_expression_set.py ^
+    python tools\\collect_expression_set.py --guide
+    python tools\\collect_expression_set.py ^
         --allow-camera --session 20261029_light1 --per-label 40 --seconds 12
 """
 from __future__ import annotations

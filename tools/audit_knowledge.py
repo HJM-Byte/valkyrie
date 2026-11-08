@@ -2,8 +2,8 @@
 """只读审计 approved 知识候选：原文类型、证据能否回到原文、当前是否可召回。
 
 用法（在 robot 目录）：
-  C:\\robot\\venv\\Scripts\\python.exe -m tools.audit_knowledge
-  C:\\robot\\venv\\Scripts\\python.exe -m tools.audit_knowledge --self-check
+  python -m tools.audit_knowledge
+  python -m tools.audit_knowledge --self-check
 
 审计只读，不 UPDATE / INSERT / DELETE 任何表。
 当前库 approve() 会把 note 覆盖成“已审核”，原始的 via 会丢失；

@@ -1,7 +1,7 @@
 """桌面版识海自检：不启动完整窗口，只验证数据、布局、面板和交互能挂起来。
 
 跑法：
-    C:\\robot\\venv\\Scripts\\python.exe tools\\selftest_desktop.py
+    python tools\\selftest_desktop.py
 
 它不会发消息、不会调用模型、不会叫醒她。Tk 窗口会短暂创建并 withdraw，
 验证完成后销毁。

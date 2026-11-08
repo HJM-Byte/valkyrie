@@ -1,6 +1,6 @@
 """P4-C 自检：人格四层、证据门槛、版本链与回滚。
 
-    C:\\robot\\venv\\Scripts\\python.exe -m tools.selftest_p4c
+    python -m tools.selftest_p4c
 
 只使用 data/acceptance/tmp/ 下的临时库。这里验证的是：
 - 身份与硬边界不可由模型写；

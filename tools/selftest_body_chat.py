@@ -1,7 +1,7 @@
 """A4.2 自检：TTS 生成一句 -> STT -> Chat（临时库）-> TTS -> Opus。
 
     cd robot
-    C:\\robot\\venv\\Scripts\\python.exe -m tools.selftest_body_chat
+    python -m tools.selftest_body_chat
 
 重点不是“能跑”，而是：
 1. 真实 memory.db / sleep.json / learn.db / flow.json 等哈希前后不变；

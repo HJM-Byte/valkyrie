@@ -1,7 +1,7 @@
 """水镜 App 的自检：只碰临时库，不碰真实 memory.db。
 
 跑法：
-    C:\\robot\\venv\\Scripts\\python.exe -m tools.selftest_pocket
+    python -m tools.selftest_pocket
 """
 from __future__ import annotations
 

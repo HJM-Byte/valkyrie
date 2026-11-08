@@ -4,7 +4,7 @@ No production database is opened for writing. The only filesystem reads are
 the static shell, the launcher/guard scripts, the startup shortcut and the
 latest web backup manifest.
 
-    C:\\robot\\venv\\Scripts\\python.exe tools\\selftest_web.py
+    python tools\\selftest_web.py
 """
 from __future__ import annotations
 

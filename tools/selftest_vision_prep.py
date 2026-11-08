@@ -1,7 +1,7 @@
 """视觉到货准备自检：不打开摄像头，验预检/采集/训练三条链路。
 
 跑法：
-    C:\\robot\\venv\\Scripts\\python.exe -m tools.selftest_vision_prep
+    python -m tools.selftest_vision_prep
 
 边界：
   - 不调用 `--camera`、不打开设备、不改 VISION_LOCKED；

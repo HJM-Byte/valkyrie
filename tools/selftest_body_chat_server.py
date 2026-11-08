@@ -1,7 +1,7 @@
 """A4.2 协议自检：真实 TTS 语音 -> WS 上行 -> 服务端 STT/Chat/TTS -> 下行。
 
     cd robot
-    C:\\robot\\venv\\Scripts\\python.exe -m tools.selftest_body_chat_server
+    python -m tools.selftest_body_chat_server
 
 使用 aiohttp TestServer，不真连板子；验证的是 `xiaozhi_server --chat` 的完整路径。
 """

@@ -1,6 +1,6 @@
 """语音识别：faster-whisper（CTranslate2，int8，CPU 可跑）。
 
-模型目录 C:\\robot\\models\\faster-whisper-small。首次加载约 1-3 秒，之后常驻。
+模型目录 models\\faster-whisper-small。首次加载约 1-3 秒，之后常驻。
 """
 from __future__ import annotations
 

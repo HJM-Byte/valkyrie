@@ -1,7 +1,7 @@
 """时间锚点自检：日期换算、最近对话、记忆日期戳。
 
     cd robot
-    C:\\robot\\venv\\Scripts\\python.exe -m tools.selftest_time_context
+    python -m tools.selftest_time_context
 
 不写真实 memory.db；只用一个临时库，跑完删掉。
 """

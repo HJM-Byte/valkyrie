@@ -182,9 +182,9 @@ docs/               本地开发记录；默认不进入公开仓库
 
 ```powershell
 .\.venv\Scripts\python.exe -m compileall app tools
-.\.venv\Scripts\python.exe tools\selftest_sihai.py
-.\.venv\Scripts\python.exe tools\selftest_desktop.py
-.\.venv\Scripts\python.exe tools\selftest_memory.py
+.\.venv\Scripts\python.exe -m tools.selftest_sihai
+.\.venv\Scripts\python.exe -m tools.selftest_desktop
+.\.venv\Scripts\python.exe -m tools.selftest_memory
 ```
 
 测试数据必须写临时库，不能写 `data/memory.db`。具体约定见 [CONTRIBUTING.md](CONTRIBUTING.md)。

@@ -32,9 +32,9 @@ copy .env.example .env
 
 ```powershell
 .\.venv\Scripts\python.exe -m compileall app tools
-.\.venv\Scripts\python.exe tools\selftest_sihai.py
-.\.venv\Scripts\python.exe tools\selftest_desktop.py
-.\.venv\Scripts\python.exe tools\selftest_memory.py
+.\.venv\Scripts\python.exe -m tools.selftest_sihai
+.\.venv\Scripts\python.exe -m tools.selftest_desktop
+.\.venv\Scripts\python.exe -m tools.selftest_memory
 ```
 
 测试数据只能写临时库，不能写生产 `data/memory.db`、`data/learning/learn.db` 或 `data/school/school.db`。需要真实库的验证要在副本上做，并在 PR 里说明。

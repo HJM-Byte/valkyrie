@@ -2,7 +2,7 @@
 
 This is deliberately narrower than tools/backup_state.py: it backs up the
 live memory databases plus the web shell and launchers, not the learning
-books or school data. Run it once a day from the watchdog; it is read-only
+books or learning data. Run it once a day from the watchdog; it is read-only
 against the live databases and uses SQLite's online backup API.
 
     python tools/web_backup.py --due

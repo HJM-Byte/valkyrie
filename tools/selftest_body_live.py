@@ -106,9 +106,6 @@ def main() -> int:
         before = {str(p): sha256(p) for p in real_files if p.exists()}
 
         class Silent:
-            def voice_note_text(self, limit: int = 3) -> str:
-                return ""
-
             def brief(self):
                 return None
 
@@ -136,7 +133,6 @@ def main() -> int:
         fake = FakeLLM()
         chat = Chat(mem=mem, mind=mind, flow=flow, llm=fake)
         chat.dispatch = Dispatch(mem=mem, learning=learning)
-        chat._school = Silent()        # type: ignore[assignment]
         chat._autonomy = Silent()      # type: ignore[assignment]
         chat._housekept = True
 

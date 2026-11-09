@@ -98,8 +98,8 @@ def main(argv: list[str] | None = None) -> int:
                       "exists": True, "bytes": dst.stat().st_size, "sha256": sha256(dst)})
         print(f"file {rel}  {dst.stat().st_size:,} B")
 
-    # 学习书 / 学校库这类目录整体带走（排除 WAL/SHM）。
-    for sub in (DATA / "learning" / "books", DATA / "school"):
+    # 学习书这类目录整体带走（排除 WAL/SHM）。
+    for sub in (DATA / "learning" / "books",):
         if not sub.exists():
             continue
         for src in sorted(sub.rglob("*")):

@@ -77,7 +77,6 @@ class Chat:
         self.flow = flow or Flow()
         self._llm = llm
         self._autonomy = None
-        self._school = None
         self._p3 = p3
         self._response_gate = response_gate
         self._last_reply = ""
@@ -124,14 +123,6 @@ class Chat:
             self._autonomy = Autonomy(learning=self.dispatch.learning,
                                       mem=self.mem, mind=self.mind)
         return self._autonomy
-
-    @property
-    def school(self):
-        """学校练稳的说话方式，回接到日常对话。只有打开过学校库才创建。"""
-        if self._school is None:
-            from .school import School
-            self._school = School()
-        return self._school
 
     def _restore_last_proactive(self) -> None:
         """同一台电脑重启后，她也要知道自己上一句主动说了什么。
@@ -250,15 +241,6 @@ class Chat:
             learning = self.autonomy.brief()
         except Exception:
             learning = None
-        # 学校练稳的说法回接到日常：不是加一段人格，是让她把练过的话
-        # 在真实对话里用一次。候选策略不进来，只有 stable 才进。
-        try:
-            notes = self.school.voice_note_text(3)
-            if notes:
-                learning = dict(learning or {})
-                learning["voice_notes"] = notes
-        except Exception:
-            pass
         th["learning"] = learning
 
         # 情感输出：内部那堆状态要翻成「这一轮怎么说、什么语速」。
@@ -384,7 +366,7 @@ class Chat:
     def proactive(self, seed: Optional[dict] = None) -> dict:
         """生成她主动发出去的那一句；不写记忆、不唤醒休眠。
 
-        用的是她同一套 Persona + 状态 + 学校练稳的说法，但 prompt 会明确说
+        用的是她同一套 Persona + 状态 + 自己长出来的问题，但 prompt 会明确说
         「现在没有他的话，是你先开口」，避免模型把不存在的一句话当成上下文。
         """
         seed = seed if isinstance(seed, dict) else self.proactive_seed()
@@ -407,13 +389,6 @@ class Chat:
             learning = self.autonomy.brief()
         except Exception:
             learning = None
-        try:
-            notes = self.school.voice_note_text(3)
-            if notes:
-                learning = dict(learning or {})
-                learning["voice_notes"] = notes
-        except Exception:
-            pass
         base = self.persona.compose(
             "", mem=self.mem, mind=self.mind, camera_ok=False,
             channel="text", learning=learning)
@@ -989,11 +964,6 @@ class Chat:
         if self._p3 is not None:
             try:
                 self._p3.close()
-            except Exception:
-                pass
-        if self._school is not None:
-            try:
-                self._school.close()
             except Exception:
                 pass
         try:

@@ -37,7 +37,7 @@ copy .env.example .env
 .\.venv\Scripts\python.exe -m tools.selftest_memory
 ```
 
-测试数据只能写临时库，不能写生产 `data/memory.db`、`data/learning/learn.db` 或 `data/school/school.db`。需要真实库的验证要在副本上做，并在 PR 里说明。
+测试数据只能写临时库，不能写生产 `data/memory.db` 或 `data/learning/learn.db`。需要真实库的验证要在副本上做，并在 PR 里说明。
 
 ## 代码约定
 

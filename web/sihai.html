@@ -29,9 +29,10 @@
   .badge.real{border-color:rgba(120,220,170,.4);color:#96e5bf;background:rgba(60,200,140,.10)}
 
   .card{position:fixed;right:20px;top:72px;width:340px;max-height:calc(100vh - 210px);
-    overflow:auto;padding:16px 16px 14px;border-radius:12px;background:var(--card);
+    overflow:auto;overscroll-behavior:contain;scrollbar-gutter:stable;
+    padding:16px 16px 14px;border-radius:12px;background:#0a0f1a;
     border:1px solid rgba(130,160,210,.18);box-shadow:0 18px 50px rgba(0,0,0,.55);
-    backdrop-filter:blur(6px);z-index:6;opacity:0;transform:translateY(-6px);
+    z-index:6;opacity:0;transform:translateY(-6px);
     transition:opacity .16s,transform .16s;pointer-events:none}
   .card.on{opacity:1;transform:none;pointer-events:auto}
   .card h2{margin:0 0 8px;font-size:15px;font-weight:600;line-height:1.45;color:#f0f5ff}
@@ -85,9 +86,10 @@
   body.birth .hint{top:auto;bottom:16px;left:auto;right:22px;text-align:right}
 
   .panel{position:fixed;left:22px;top:122px;width:272px;z-index:6;
-    max-height:calc(100vh - 238px);overflow:auto;scrollbar-width:none;
-    padding:15px 16px 14px;border-radius:14px;background:rgba(8,13,23,.78);
-    border:1px solid rgba(130,165,220,.16);backdrop-filter:blur(12px);
+    max-height:calc(100vh - 238px);overflow:auto;overscroll-behavior:contain;
+    scrollbar-width:none;scrollbar-gutter:stable;
+    padding:15px 16px 14px;border-radius:14px;background:#08101c;
+    border:1px solid rgba(130,165,220,.16);
     box-shadow:0 20px 54px rgba(0,0,0,.38);
     font-size:12px;color:#98a7bd}
   .panel::-webkit-scrollbar{display:none}
@@ -142,7 +144,8 @@
   .talk{position:fixed;left:50%;transform:translateX(-50%);bottom:16px;width:min(620px,86vw);
     z-index:7;display:none}
   body.birth .talk{display:block}
-  .said{max-height:190px;overflow:auto;margin-bottom:8px;display:flex;flex-direction:column;
+  .said{max-height:190px;overflow:auto;overscroll-behavior:contain;
+    scrollbar-gutter:stable;margin-bottom:8px;display:flex;flex-direction:column;
     gap:5px;font-size:12.5px;line-height:1.6;scrollbar-width:none;
     -webkit-mask-image:linear-gradient(to bottom,transparent 0,#000 18px);
     mask-image:linear-gradient(to bottom,transparent 0,#000 18px)}
@@ -168,9 +171,10 @@
   /* ---- 独立按键：五块视图 ---- */
   .dock{position:fixed;left:50%;top:64px;transform:translateX(-50%);z-index:9;
     display:flex;align-items:center;gap:4px;padding:5px;border-radius:999px;
-    background:rgba(7,11,20,.72);border:1px solid rgba(130,160,210,.16);
-    box-shadow:0 12px 34px rgba(0,0,0,.38);backdrop-filter:blur(14px);
-    max-width:calc(100vw - 40px);overflow:auto;scrollbar-width:none}
+    background:#070b14;border:1px solid rgba(130,160,210,.16);
+    box-shadow:0 12px 34px rgba(0,0,0,.38);
+    max-width:calc(100vw - 40px);overflow:auto;overscroll-behavior:contain;
+    scrollbar-width:none;scrollbar-gutter:stable}
   .dock::-webkit-scrollbar{display:none}
   .dock button{appearance:none;border:1px solid transparent;background:transparent;
     color:#8fa0b7;border-radius:999px;padding:7px 12px;font:inherit;font-size:12px;
@@ -188,15 +192,16 @@
   .thoughtline{position:fixed;left:50%;transform:translateX(-50%);bottom:108px;z-index:6;
     width:min(760px,72vw);font-size:12.5px;line-height:1.6;color:#b9cbdf;
     cursor:pointer;padding:8px 13px;border-radius:10px;
-    background:linear-gradient(90deg,rgba(8,13,23,.82),rgba(8,13,23,.30));
-    border:1px solid rgba(110,150,210,.13);backdrop-filter:blur(8px);
+    background:linear-gradient(90deg,rgba(8,13,23,.96),rgba(8,13,23,.78));
+    border:1px solid rgba(110,150,210,.13);
     white-space:nowrap;overflow:hidden;text-overflow:ellipsis;transition:color .15s,border-color .15s}
   .thoughtline:hover{color:#eef5ff;border-color:rgba(130,190,255,.32)}
   .thoughtline .tick{color:#7fd8ff;margin-right:7px;font-size:11px;letter-spacing:.08em}
   .thoughtline b{color:#e7effc;font-weight:500}
 
   .drawer{position:fixed;right:20px;top:118px;z-index:10;width:min(392px,calc(100vw - 40px));
-    max-height:calc(100vh - 174px);overflow:auto;padding:0;border-radius:14px;
+    max-height:calc(100vh - 174px);overflow:auto;overscroll-behavior:contain;
+    scrollbar-gutter:stable;padding:0;border-radius:14px;
     background:#08101c;border:1px solid rgba(140,175,230,.26);
     box-shadow:0 28px 80px rgba(0,0,0,.72);
     opacity:0;transform:translateX(14px);pointer-events:none;
@@ -295,6 +300,7 @@
   .mean-build summary{cursor:pointer;font-size:12px;color:#b9d2ee;outline:none}
   .mean-build[open] summary{margin-bottom:8px}
   .mean-src{list-style:none;margin:8px 0 10px;padding:0;max-height:210px;overflow:auto;
+    overscroll-behavior:contain;scrollbar-gutter:stable;
     border-top:1px solid rgba(140,170,220,.08);border-bottom:1px solid rgba(140,170,220,.08)}
   .mean-src li{border-bottom:1px solid rgba(140,170,220,.06)}
   .mean-src li:last-child{border:0}

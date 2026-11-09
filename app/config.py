@@ -262,38 +262,16 @@ LLM_THINK = False           # Qwen3 系会先输出 thinking，机器人对话�
 # 再往前的属于记忆，而她现在没有记忆。
 BIRTH_HISTORY = 4
 
-# --- 学校（结构化微课） -----------------------------------------------------
-# 小凌视频里的设计：老师出题、她回答、老师评价，再由另一个大模型审卷；
-# 学完当天配额，才放她自己去网上找材料。视频原版是 117 节 × 3 分钟，
-# 2026-10-29 用户定为 50 节 × 5 分钟（250 分钟/天），不要照搬 117。
-SCHOOL_DIR = DATA / "school"
-SCHOOL_DB = SCHOOL_DIR / "school.db"
-SCHOOL_LESSONS_PER_DAY = int(os.environ.get("ROBOT_SCHOOL_LESSONS_PER_DAY", "50"))
-SCHOOL_LESSON_SECONDS = int(os.environ.get("ROBOT_SCHOOL_LESSON_SECONDS", "300"))
-SCHOOL_PASS_SCORE = int(os.environ.get("ROBOT_SCHOOL_PASS_SCORE", "70"))
-SCHOOL_STABLE_EVIDENCE = int(os.environ.get("ROBOT_SCHOOL_STABLE_EVIDENCE", "3"))
-SCHOOL_INTERNET_GATE = os.environ.get(
-    "ROBOT_SCHOOL_INTERNET_GATE", "1") != "0"
-
-# --- 每日 token 预算（学习 / 学校） ---------------------------------------
+# --- 每日 token 预算（学习） -----------------------------------------------
 # 默认值是初始安全值，不是产品指标；只有用户明确改配置才能提高。
 BUDGET_DB = DATA / "budget.db"
 BUDGET_TZ = os.environ.get("ROBOT_BUDGET_TZ", "Asia/Shanghai")
 RESEARCH_DAILY_TOKENS = int(os.environ.get(
     "ROBOT_RESEARCH_DAILY_TOKENS", "120000"))
-SCHOOL_DAILY_TOKENS = int(os.environ.get(
-    "ROBOT_SCHOOL_DAILY_TOKENS", "240000"))
 
 # --- 学习总开关（2026-10-31 用户要求：开闸）--------------------------------
-# 默认开启；要临时停学时设 ROBOT_LEARNING_PAUSED=1 / ROBOT_SCHOOL_PAUSED=1。
+# 默认开启；要临时停学时设 ROBOT_LEARNING_PAUSED=1。
 LEARNING_PAUSED = os.environ.get("ROBOT_LEARNING_PAUSED", "0") != "0"
-SCHOOL_PAUSED = os.environ.get("ROBOT_SCHOOL_PAUSED", "0") != "0"
-
-# 学校开学日：用户 2026-10-31 要求「学校的学习安排到明天再开始」。
-# 这一天之前的任何入口都不排课、不上课；日期留空表示立即开学。
-# 2026-11-01 之后每天照常排 50 节，不受这个日期限制。
-SCHOOL_START_DATE = (os.environ.get(
-    "ROBOT_SCHOOL_START_DATE", "2026-11-01") or "").strip()
 
 # --- 自主学习（服务内常驻） -------------------------------------------------
 # 她不是等用户发话才学：服务开着时每隔一段时间看一次，情绪/记忆/好奇

@@ -1737,8 +1737,6 @@ def main(argv: Optional[list[str]] = None) -> int:
     ap.add_argument("--readonly", action="store_true", help="只读：不允许新增/更正/撤回")
     ap.add_argument("--chat", action="store_true",
                     help="启用对话；发送第一句会叫醒她，不开就只看记忆")
-    ap.add_argument("--school", action="store_true",
-                    help="随服务运行学校常驻：开学后每天每 5 分钟一节")
     ap.add_argument("--autonomy", action="store_true",
                     help="随服务运行自主自习：按她的情绪/好奇自己找材料")
     ap.add_argument("--proactive", action="store_true",
@@ -1753,9 +1751,9 @@ def main(argv: Optional[list[str]] = None) -> int:
                     help="连续输入合并窗口（毫秒）；只影响 defer 适配，不影响固定秒数")
     a = ap.parse_args(argv)
 
-    if (a.chat or a.school or a.autonomy or a.proactive) and (
+    if (a.chat or a.autonomy or a.proactive) and (
             a.demo or a.readonly):
-        print("--chat / --school / --autonomy / --proactive 不能和 --demo / "
+        print("--chat / --autonomy / --proactive 不能和 --demo / "
               "--readonly 一起用：示例和只读都不该叫醒她或写她的库。")
         return 2
     if (a.autonomy or a.proactive) and not a.chat:
@@ -1805,12 +1803,6 @@ def main(argv: Optional[list[str]] = None) -> int:
     print(f"对话    {'开：发送第一句会叫醒她' if a.chat else '关：只看记忆，不叫醒她'}")
     if a.chat:
         print(f"回应    {gate_mode} · 社交沉默 {'开' if social_silence else '关'}")
-    if a.school:
-        print(f"学校    开：开学日 {C.SCHOOL_START_DATE or '立即'}，"
-              f"每天 {C.SCHOOL_LESSONS_PER_DAY} 节 × "
-              f"{C.SCHOOL_LESSON_SECONDS // 60} 分钟；课程以像人说话/思考为主")
-    else:
-        print("学校    关：只跑手动 school.cmd")
     if a.autonomy:
         print(f"自学    开：每约 {C.AUTONOMY_INTERVAL_MINUTES} 分钟看她想不想学")
     else:
@@ -1828,19 +1820,6 @@ def main(argv: Optional[list[str]] = None) -> int:
     else:
         print("手机    加 --lan 才会监听局域网；USB 调试用 usb.cmd 做反向转发。")
     print("\nCtrl+C 停止。\n")
-
-    if a.school:
-        from .school import School
-        school = School()
-
-        def _school_worker() -> None:
-            try:
-                school.run_loop()
-            finally:
-                school.close()
-
-        threading.Thread(target=_school_worker, name="school-loop",
-                         daemon=True).start()
 
     stop_proactive = threading.Event()
     stop_autonomy = threading.Event()

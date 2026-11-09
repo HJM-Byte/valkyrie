@@ -176,7 +176,7 @@ class ScrollPanel(tk.Frame):
     def __init__(self, master: tk.Misc, bg: str) -> None:
         super().__init__(master, bg=bg)
         self.canvas = tk.Canvas(self, bg=bg, highlightthickness=0, bd=0,
-                                height=560)
+                                height=560, yscrollincrement=18)
         self.scroll = tk.Scrollbar(self, orient="vertical", width=7,
                                    command=self.canvas.yview,
                                    bg=bg, troughcolor=bg,
@@ -197,13 +197,18 @@ class ScrollPanel(tk.Frame):
         self.canvas.itemconfigure(self._win, width=max(1, event.width))
 
     def _on_inner(self, _event: tk.Event) -> None:
-        self.canvas.configure(scrollregion=self.canvas.bbox("all"))
+        bbox = self.canvas.bbox("all")
+        if bbox and str(self.canvas.cget("scrollregion")) != " ".join(map(str, bbox)):
+            self.canvas.configure(scrollregion=bbox)
 
-    def _on_wheel(self, event: tk.Event) -> None:
+    def _on_wheel(self, event: tk.Event) -> str:
         try:
-            self.canvas.yview_scroll(int(-event.delta / 120), "units")
+            step = int(-event.delta / 120)
+            if step:
+                self.canvas.yview_scroll(step, "units")
         except Exception:
             pass
+        return "break"
 
 
 # ---- 聊天气泡 -------------------------------------------------------------
@@ -217,7 +222,7 @@ class ChatLog(tk.Frame):
         self.user_font = user_font or font
         self.small_font = small_font
         self.canvas = tk.Canvas(self, bg=CARD_BG, highlightthickness=0,
-                                height=126, bd=0)
+                                height=126, bd=0, yscrollincrement=16)
         self.canvas.pack(fill="both", expand=True)
         self.inner = tk.Frame(self.canvas, bg=CARD_BG)
         self._win = self.canvas.create_window((0, 0), window=self.inner, anchor="nw")
@@ -231,13 +236,18 @@ class ChatLog(tk.Frame):
         self.canvas.itemconfigure(self._win, width=max(1, event.width))
 
     def _on_inner(self, _event: tk.Event) -> None:
-        self.canvas.configure(scrollregion=self.canvas.bbox("all"))
+        bbox = self.canvas.bbox("all")
+        if bbox and str(self.canvas.cget("scrollregion")) != " ".join(map(str, bbox)):
+            self.canvas.configure(scrollregion=bbox)
 
-    def _on_wheel(self, event: tk.Event) -> None:
+    def _on_wheel(self, event: tk.Event) -> str:
         try:
-            self.canvas.yview_scroll(int(-event.delta / 120), "units")
+            step = int(-event.delta / 120)
+            if step:
+                self.canvas.yview_scroll(step, "units")
         except Exception:
             pass
+        return "break"
 
     def _scroll(self) -> None:
         self.canvas.update_idletasks()

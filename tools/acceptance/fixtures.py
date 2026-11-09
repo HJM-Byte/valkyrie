@@ -2,7 +2,7 @@
 
 硬约束：
 - 所有数据库路径必须落在 `robot/data/acceptance/tmp/` 下；
-- 生产库（memory.db / learn.db / school.db / proactive.db / budget.db / p3.db）一律拒绝；
+- 生产库（memory.db / learn.db / proactive.db / budget.db / p3.db）一律拒绝；
 - 临时目录必须显式 `TemporaryDirectory(dir=TMP_ROOT)`，不依赖系统临时目录；
 - 测试结束由 TemporaryDirectory 自动清理，不写生产数据。
 
@@ -29,7 +29,6 @@ TMP_ROOT = DATA / "acceptance" / "tmp"
 PRODUCTION_DBS = {
     "memory": DATA / "memory.db",
     "learn": DATA / "learning" / "learn.db",
-    "school": DATA / "school" / "school.db",
     "proactive": DATA / "proactive.db",
     "budget": DATA / "budget.db",
     "p3": DATA / "p3.db",
@@ -96,7 +95,6 @@ class TempWorkspace:
         self.root = root
         self.memory_db = root / "memory.db"
         self.learn_db = root / "learning" / "learn.db"
-        self.school_db = root / "school" / "school.db"
         self.p3_db = root / "p3.db"
         self.flow_json = root / "flow.json"
         # 生产库集合包含 p3.db；临时 workspace 也显式提供它，测试不自己造路径。
@@ -109,7 +107,6 @@ class TempWorkspace:
     def _prepare(self) -> None:
         self.root.mkdir(parents=True, exist_ok=True)
         self.learn_db.parent.mkdir(parents=True, exist_ok=True)
-        self.school_db.parent.mkdir(parents=True, exist_ok=True)
         self.books.mkdir(parents=True, exist_ok=True)
 
     def open_memory(self):
@@ -158,20 +155,6 @@ class TempWorkspace:
         from app.p3 import P3Store
 
         obj = P3Store(self.p3_db)
-        self._open.append(obj)
-        return obj
-
-    def open_school(self):
-        self._prepare()
-        assert_temp_db(self.school_db)
-        from app.school import School
-
-        obj = School(
-            db_path=self.school_db,
-            lessons_per_day=50,
-            gate=False,
-            start_date="2026-11-01",
-        )
         self._open.append(obj)
         return obj
 
@@ -227,9 +210,6 @@ def self_check() -> dict:
                   Path(lr.path).resolve() == ws.learn_db.resolve(), str(lr.path))
             cur = lr._db.execute("SELECT COUNT(*) FROM candidates").fetchone()
             check("learning 候选表为空", int(cur[0]) == 0, str(tuple(cur)))
-        sch = ws.open_school()
-        cur = sch._db.execute("SELECT COUNT(*) FROM lessons").fetchone()
-        check("school 临时库为空", int(cur[0]) == 0, str(tuple(cur)))
         for name, prod in PRODUCTION_DBS.items():
             before = prod.stat().st_mtime_ns if prod.exists() else None
             check(f"{name} 生产库未被 fixture 打开",

@@ -3,7 +3,7 @@
     python -m tools.selftest_response_gate
 
 只用 `data/acceptance/tmp/` 下的临时库和 fake LLM；不打开生产 memory.db /
-learn.db / p3.db / school.db。重点不是“她像不像人”，而是：
+learn.db / p3.db。重点不是“她像不像人”，而是：
 
 1. 零输出是正常终态，不是空 assistant、错误或 TTS；
 2. 明确请求、安全、承诺和用户覆盖不能被沉默吞掉；
@@ -111,11 +111,6 @@ class NoAutonomy:
         return {}
 
 
-class NoSchool:
-    def voice_note_text(self, n: int = 3) -> str:
-        return ""
-
-
 def make_chat(ws, gate: ResponseGate):
     mem = ws.open_memory()
     mind = Mind(ws.memory_db)
@@ -125,7 +120,6 @@ def make_chat(ws, gate: ResponseGate):
                 persona=FakePersona(), llm=llm, learning=NoLearning(),
                 response_gate=gate)
     chat._autonomy = NoAutonomy()
-    chat._school = NoSchool()
     return chat, llm, mem, p3
 
 

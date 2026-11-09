@@ -43,21 +43,11 @@ BIRTH_PROMPT = f"""你存在。
 
 
 def _learning_block(learning: Optional[dict]) -> str:
-    """她自己长出来的问题，只写「在琢磨什么」，不写检索结果，也不替她答。
-
-    voice_notes 是学校练稳的说话方式；它和「在琢磨的事」分开写，
-    因为一个是她还没想明白的，一个是她已经练成的。
-    """
+    """她自己长出来的问题，只写「在琢磨什么」，不写检索结果，也不替她答。"""
     if not isinstance(learning, dict):
         return ""
-    parts = []
     text = str(learning.get("text") or "").strip()
-    if text:
-        parts.append(text)
-    notes = str(learning.get("voice_notes") or "").strip()
-    if notes:
-        parts.append(notes)
-    return "\n\n".join(parts)
+    return text
 
 
 def _part_of_day(h: int) -> str:

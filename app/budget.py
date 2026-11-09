@@ -1,7 +1,7 @@
 """每日 token 预算：跨重启、跨入口的硬上限。
 
-学习（research）和学校（school）都会调模型。旧代码里没有累计账本，
-一个进程重启就能重新领一份额度。这里用 SQLite 两张表做原子预留：
+学习（research）会调模型。旧代码里没有累计账本，一个进程重启就能重新领
+一份额度。这里用 SQLite 两张表做原子预留：
 
     budget_usage        每个 (day, domain) 的 committed / reserved
     budget_reservations 每一笔预留的完整生命周期
@@ -105,7 +105,6 @@ class Budget:
         self.path.parent.mkdir(parents=True, exist_ok=True)
         self.limits = {
             "research": int(getattr(C, "RESEARCH_DAILY_TOKENS", 120000)),
-            "school": int(getattr(C, "SCHOOL_DAILY_TOKENS", 240000)),
         }
         if limits:
             self.limits.update({str(k): int(v) for k, v in limits.items()})

@@ -107,7 +107,7 @@ class LLM:
         if self.backend in ("deepseek", "openai", "cloud"):
             self.backend = "cloud"
         self.history_limit = C.LLM_MAX_HISTORY if history_limit is None else int(history_limit)
-        # 只有 research / school 纳入每日硬预算；chat 不占这两个额度。
+        # 只有 research 纳入每日硬预算；chat 不占这个额度。
         self.domain = (domain or "").strip().lower() or None
         self.budget = budget
         self.system_prompt = system_prompt or (
@@ -162,8 +162,8 @@ class LLM:
 
     # ---- 非流式 -----------------------------------------------------------
     def _reserve_budget(self, user_text: str, system: Optional[str]):
-        """research/school 调用前原子预留；chat 不占预算。"""
-        if self.domain not in ("research", "school"):
+        """research 调用前原子预留；chat 不占预算。"""
+        if self.domain != "research":
             return None
         from .budget import default_budget
         from .persona import rough_tokens

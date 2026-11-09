@@ -49,16 +49,6 @@ class BodyBrainError(RuntimeError):
     """身体大脑的准备/回答失败。"""
 
 
-class _SilentSchool:
-    """A4.2 不接学校库；读真实 school.db 会带来无关副作用。"""
-
-    def voice_note_text(self, limit: int = 3) -> str:
-        return ""
-
-    def close(self) -> None:
-        pass
-
-
 class _SilentAutonomy:
     """A4.2 不跑自主学习；避免后台任务在临时库/真实网络上乱写。"""
 
@@ -294,7 +284,6 @@ class BodyBrain:
         learning = Learning(self.root / "learning" / "learn.db")
         chat = Chat(mem=mem, mind=mind, flow=flow)
         chat.dispatch = Dispatch(mem=mem, learning=learning)
-        chat._school = _SilentSchool()          # type: ignore[assignment]
         chat._autonomy = _SilentAutonomy()      # type: ignore[assignment]
         # 第一轮不做记忆生命周期/夜间窗口，避免后台任务碰真实文件。
         chat._housekept = True

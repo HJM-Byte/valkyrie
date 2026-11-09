@@ -22,7 +22,6 @@ MODULES = [
     "tools.selftest_autonomy",
     "tools.selftest_memory",
     "tools.selftest_learning",
-    "tools.selftest_school",
     "tools.selftest_mind",
 ]
 

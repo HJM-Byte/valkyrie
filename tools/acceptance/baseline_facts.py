@@ -194,20 +194,14 @@ def _config_facts() -> dict:
     mind = read_text(ROOT / "app" / "mind.py")
     growth = re.search(r"^GROWTH_LOCKED\s*=\s*(True|False)\s*$", mind, re.M)
     vision = re.search(r"^VISION_LOCKED\s*=\s*(True|False)\s*$", cfg, re.M)
-    lessons = re.search(
-        r'SCHOOL_LESSONS_PER_DAY\s*=\s*int\(os\.environ\.get\(\s*'
-        r'"ROBOT_SCHOOL_LESSONS_PER_DAY"\s*,\s*"(\d+)"', cfg
-    )
     budget_keys = {
         key: bool(re.search(rf"^\s*{key}\s*=", cfg, re.M))
         for key in ("ROBOT_RESEARCH_DAILY_TOKENS",
-                    "ROBOT_SCHOOL_DAILY_TOKENS",
                     "ROBOT_BUDGET_TZ")
     }
     return {
         "growth_locked": None if not growth else growth.group(1) == "True",
         "vision_locked": None if not vision else vision.group(1) == "True",
-        "school_lessons_per_day": None if not lessons else int(lessons.group(1)),
         "token_budget_config_present": budget_keys,
         "config_sha256": sha256(ROOT / "app" / "config.py"),
         "mind_sha256": sha256(ROOT / "app" / "mind.py"),
@@ -218,7 +212,6 @@ def collect() -> dict:
     runtime = _runtime()
     memory_path = DATA / "memory.db"
     learn_path = DATA / "learning" / "learn.db"
-    school_path = DATA / "school" / "school.db"
     proactive_path = DATA / "proactive.db"
     return {
         "collected_at": datetime.now().astimezone().isoformat(timespec="seconds"),
@@ -239,13 +232,6 @@ def collect() -> dict:
                 "bytes": learn_path.stat().st_size if learn_path.exists() else None,
                 "sha256": sha256(learn_path) if learn_path.exists() else None,
                 "counts": _learn_counts(learn_path),
-            },
-            "school": {
-                "path": str(school_path),
-                "exists": school_path.exists(),
-                "bytes": school_path.stat().st_size if school_path.exists() else None,
-                "sha256": sha256(school_path) if school_path.exists() else None,
-                "tables": _table_counts(school_path),
             },
             "proactive": {
                 "path": str(proactive_path),

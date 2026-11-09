@@ -244,7 +244,8 @@ class Chat:
         th["learning"] = learning
 
         # 情感输出：内部那堆状态要翻成「这一轮怎么说、什么语速」。
-        # 它不负责内容，只负责语气——内容还是这一轮的判断给的。
+        # 「说什么」已经由 think.decide 按情绪场算好，落在 decision.content；
+        # 这里只补语气和发声参数，不重复决定内容。
         plan = _emotion.plan(self.mind.snapshot(), th, th.get("ambient"),
                              (th.get("memory") or {}).get("hits"))
         th["emotion_plan"] = plan

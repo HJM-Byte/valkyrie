@@ -69,6 +69,13 @@ FONT_ALT = "Noto Sans SC"
 SERIF = "Noto Serif SC"
 MONO = "Cascadia Mono"
 
+# 星图是一张 200+ 节点、1000+ 连线的图。Tk 的 itemconfigure/coords 每次都要
+# 过 Tcl，60fps 全量重画会把主线程吃满，滚动和输入就会排队。桌面版改成
+# 按需绘制：静止时完全不画；交互/动画时限制重绘频率，拖动时只画星点。
+# 连线也只画权重最高的一批，避免 1000 条贝塞尔每帧重投影。
+FRAME_MIN = 0.020
+EDGE_BUDGET = 180
+
 # 电脑端的识海入口：统一指向正在跑的 8767，不再新开 8765。
 SIHAI_WEB = "http://127.0.0.1:8767/sihai.html"
 
@@ -406,6 +413,13 @@ class DesktopApp:
         self._tick_job: Optional[str] = None
         self._resize_job: Optional[str] = None
         self._closing = False
+        self._render_dirty = True
+        self._anim_until = 0.0
+        self._last_render = 0.0
+        self._order_key: Optional[tuple[str, ...]] = None
+        self._edge_drawn: set[int] = set()
+        self._label_visible: set[str] = set()
+        self._fast_mode = False
         self._chat: Any = None
         self._chat_lock = threading.Lock()
         self._ui_queue: "queue.Queue[Any]" = queue.Queue()
@@ -1477,12 +1491,16 @@ class DesktopApp:
         self._selection_items.clear()
         self._birth_items.clear()
         self._core_item = None
+        self._order_key = None
+        self._edge_drawn.clear()
+        self._label_visible.clear()
         self._draw_static_background()
         if self.birth:
             self._build_birth_items()
         else:
             self._build_memory_items()
         self._place_overlays()
+        self._mark_dirty(0.15)
 
     def _draw_static_background(self) -> None:
         img = self._make_background(self.W, self.H)
@@ -1632,8 +1650,13 @@ class DesktopApp:
         # 边
         for e in self.edges:
             item = self.canvas.create_line(0, 0, 1, 1, fill="#2b4a48", width=1,
-                                           tags=("edge",))
+                                           state="hidden", tags=("edge",))
             self._edge_items.append((item, e))
+        # 1047 条边全画会压住星图，也会把每帧拖到 20ms 以上。按权重排序，
+        # 每帧只画前 EDGE_BUDGET 条；选中一颗星时它的关联边优先补进来。
+        self._edge_items.sort(
+            key=lambda pair: -float(pair[1].get("w") or 0.0))
+        self._edge_drawn.clear()
         # 节点
         for n in self.nodes:
             gid = str(n.get("id"))
@@ -1706,6 +1729,20 @@ class DesktopApp:
             self._layer_items.append({"bg": bg, "line": line, "txt": txt, "i": i})
 
     # ---- 每帧 -------------------------------------------------------------
+    def _mark_dirty(self, seconds: float = 0.0) -> None:
+        """标记画面需要重画；seconds 是这次交互的动画尾长。"""
+        self._render_dirty = True
+        if seconds:
+            self._anim_until = max(self._anim_until, _now() + seconds)
+
+    def _wants_frame(self, now: float) -> bool:
+        # 静止时一帧都不画。Tk 主线程空出来，滚动、输入和窗口拖动才不会排队。
+        if not self.graph:
+            return False
+        if now - self._last_render < FRAME_MIN:
+            return False
+        return self._render_dirty or now < self._anim_until
+
     def _tick(self) -> None:
         if self._closing:
             return
@@ -1715,9 +1752,11 @@ class DesktopApp:
             self._last_t = now
             self._drain_ui()
             self._step_cam(dt, now)
-            if self.graph:
+            if self._wants_frame(now):
                 self._render(now)
-            self._tick_job = self.root.after(16, self._tick)
+                self._render_dirty = False
+                self._last_render = now
+            self._tick_job = self.root.after(10, self._tick)
         except Exception:
             self._closing = True
             raise
@@ -1734,9 +1773,10 @@ class DesktopApp:
             c["tzoom"] = tw["zoom1"]
             if k >= 1:
                 c["tween"] = None
+            self._anim_until = max(self._anim_until, now + 0.05)
             self._paint_zoom()
             return
-        if not self.dragging:
+        if not self.dragging and (c["vyaw"] or c["vpitch"]):
             c["yaw"] += c["vyaw"] * dt
             c["pitch"] += c["vpitch"] * dt
             damp = math.pow(0.0025, dt)
@@ -1746,10 +1786,13 @@ class DesktopApp:
                 c["vyaw"] = 0.0
             if abs(c["vpitch"]) < 0.003:
                 c["vpitch"] = 0.0
-            if not c["vyaw"] and not c["vpitch"]:
-                c["yaw"] += 0.02 * dt
+            self._anim_until = max(self._anim_until, now + 0.10)
         c["pitch"] = clamp(c["pitch"], -1.32, 1.32)
-        c["zoom"] += (c["tzoom"] - c["zoom"]) * min(1.0, dt * 9)
+        if abs(c["zoom"] - c["tzoom"]) > 0.0005:
+            c["zoom"] += (c["tzoom"] - c["zoom"]) * min(1.0, dt * 9)
+            self._anim_until = max(self._anim_until, now + 0.08)
+        else:
+            c["zoom"] = c["tzoom"]
         self._paint_zoom()
 
     def _paint_zoom(self) -> None:
@@ -1780,23 +1823,50 @@ class DesktopApp:
         s = focal / zc
         return self.W * 0.5 + rx * s, self.H * 0.5 + ry * s, zc, s
 
+    def _set_fast_mode(self, fast: bool) -> None:
+        """拖动时只画星点，不画标签/连线/尘埃。
+
+        拖动是最需要跟手的时刻；把这些装饰层暂时收起来，松手后一次补全，
+        比每帧重画 1000 条边更像“流畅”。
+        """
+        if fast == self._fast_mode:
+            return
+        self._fast_mode = fast
+        if fast:
+            for gid in list(self._label_visible):
+                rec = self._node_items.get(gid)
+                if rec:
+                    self.canvas.itemconfigure(rec["lbg"], state="hidden")
+                    self.canvas.itemconfigure(rec["ltxt"], state="hidden")
+            self._label_visible.clear()
+            for item in list(self._edge_drawn):
+                self.canvas.itemconfigure(item, state="hidden")
+            self._edge_drawn.clear()
+        else:
+            self._mark_dirty(0.10)
+
     def _render(self, now: float) -> None:
         if self.birth:
             self._render_birth(now)
             return
+        fast = bool(self.dragging and self.drag_data and
+                    self.drag_data.get("moved", 0.0) >= 4.0)
+        if fast != self._fast_mode:
+            self._set_fast_mode(fast)
         cam = self._prep_cam()
         W, H = self.W, self.H
-        # 星点
-        t = now
-        ox = -self.cam["yaw"] * 66 + math.sin(t * 0.05) * 10
-        oy = -self.cam["pitch"] * 52 + math.cos(t * 0.043) * 8
-        for item, s in self._twinkle_items:
-            x = (s["x"] + ox * s["layer"]) % W
-            y = (s["y"] + oy * s["layer"]) % H
-            r = s["r"]
-            self.canvas.coords(item, x, y, x + r, y + r)
-            a = s["a"] * (0.55 + 0.45 * math.sin(t * s["sp"] + s["ph"]))
-            self.canvas.itemconfigure(item, fill=hex_mix(BG, "#cfe0ff", clamp(a * 2.2, 0.05, 0.85)))
+        if not fast:
+            # 星点
+            t = now
+            ox = -self.cam["yaw"] * 66 + math.sin(t * 0.05) * 10
+            oy = -self.cam["pitch"] * 52 + math.cos(t * 0.043) * 8
+            for item, s in self._twinkle_items:
+                x = (s["x"] + ox * s["layer"]) % W
+                y = (s["y"] + oy * s["layer"]) % H
+                r = s["r"]
+                self.canvas.coords(item, x, y, x + r, y + r)
+                a = s["a"] * (0.55 + 0.45 * math.sin(t * s["sp"] + s["ph"]))
+                self.canvas.itemconfigure(item, fill=hex_mix(BG, "#cfe0ff", clamp(a * 2.2, 0.05, 0.85)))
         # 壳环和尘
         for rec in self._birth_items.get("rings", []):
             c = rec["c"]
@@ -1811,17 +1881,19 @@ class DesktopApp:
                 self.canvas.coords(rec["item"], *xy)
                 self.canvas.itemconfigure(
                     rec["item"], fill="#1b2d4a" if c["role"] == "ring" else "#243b5c")
-        self._render_dust(now, cam)
+        if not fast:
+            self._render_dust(now, cam)
         self._render_nodes(now, cam)
-        self._render_labels(now, cam)
         self._render_selection(now, cam)
-        self._render_layer_labels(cam)
-        self._render_edges(now, cam)
-        # 节点与边的前后关系：边在星下面，星在标签下面。
-        # 节点在 _render_nodes 里按深度逐个 raise；标签、选中环和层名最后压上。
-        self.canvas.tag_raise("nodelabel")
-        self.canvas.tag_raise("selection")
-        self.canvas.tag_raise("layerlabel")
+        if not fast:
+            self._render_labels(now, cam)
+            self._render_layer_labels(cam)
+            self._render_edges(now, cam)
+            # 节点与边的前后关系：边在星下面，星在标签下面。
+            # 节点在 _render_nodes 里按深度逐个 raise；标签、选中环和层名最后压上。
+            self.canvas.tag_raise("nodelabel")
+            self.canvas.tag_raise("selection")
+            self.canvas.tag_raise("layerlabel")
         # 时间轴没动，但出生期计时需要刷新
         self._tick_n += 1
 
@@ -1851,11 +1923,16 @@ class DesktopApp:
             if not rec:
                 continue
             px, py, pz, ps = self._project(n["px3"], n["py3"], n["pz3"], cam)
-            if not ps or not self._shown(n):
-                for key in ("glow", "ring", "core", "inner"):
-                    self.canvas.itemconfigure(rec[key], state="hidden")
+            if (not ps or not self._shown(n)
+                    or px < -80 or px > self.W + 80
+                    or py < -80 or py > self.H + 80):
+                if not rec.get("_culled"):
+                    for key in ("glow", "ring", "core", "inner"):
+                        self.canvas.itemconfigure(rec[key], state="hidden")
+                    rec["_culled"] = True
                 n["_screen"] = (0.0, 0.0, 0.0, 0.0, 0.0)
                 continue
+            was_culled = bool(rec.pop("_culled", False))
             r = min(n.get("r_world", 0.003) * ps, rmax)
             n["_screen"] = (px, py, pz, ps, r)
             act = self._act_alpha(n, now)
@@ -1865,7 +1942,9 @@ class DesktopApp:
             if act > 0.01:
                 color = hex_mix(color, "#ffffff", clamp(act * 0.55, 0, 0.7))
             photo = self._glow.photo(color, int(gr * 2))
-            self.canvas.itemconfigure(rec["glow"], state="normal", image=photo)
+            if was_culled or rec.get("_glow_photo") is not photo:
+                self.canvas.itemconfigure(rec["glow"], state="normal", image=photo)
+                rec["_glow_photo"] = photo
             self.canvas.coords(rec["glow"], px, py)
             core = max(1.0, r)
             echo = bool(n.get("is_echo"))
@@ -1873,48 +1952,66 @@ class DesktopApp:
             if self.echo_only and not (echo or ambient):
                 for key in ("glow", "ring", "core", "inner", "lbg", "ltxt"):
                     self.canvas.itemconfigure(rec[key], state="hidden")
+                rec["_culled"] = True
                 n["_screen"] = (0.0, 0.0, 0.0, 0.0, 0.0)
                 continue
             hollow = bool(n.get("scope") == "inferred")
+            hot = n is self.picked or n is self.hover
             if echo or hollow:
-                self.canvas.itemconfigure(rec["core"], state="normal",
-                                          fill="#101a2b", outline=color, width=1.4)
-                self.canvas.coords(rec["core"], px - core, py - core,
-                                   px + core, py + core)
-                self.canvas.itemconfigure(rec["inner"], state="hidden")
+                core_fill, core_outline, core_width = "#101a2b", color, 1.4
             else:
-                self.canvas.itemconfigure(rec["core"], state="normal",
-                                          fill=color, outline="", width=0)
-                self.canvas.coords(rec["core"], px - core, py - core,
-                                   px + core, py + core)
-                # 普通星只留一圈本星色；纯白芯会把「颜色 = 情绪」吃掉。
-                # 悬停/选中的那颗才给白色高光，提醒你正在看它。
-                if core > 3 and (n is self.picked or n is self.hover):
-                    self.canvas.itemconfigure(rec["inner"], state="normal",
-                                              fill="#f4f8ff")
-                    self.canvas.coords(rec["inner"], px - core * 0.22, py - core * 0.22,
-                                       px + core * 0.22, py + core * 0.22)
-                else:
-                    self.canvas.itemconfigure(rec["inner"], state="hidden")
+                core_fill, core_outline, core_width = color, "", 0
+            if hot:
+                core_outline, core_width = "#eaf4ff", 1.2
+            core_style = (core_fill, core_outline, core_width)
+            if was_culled or rec.get("_core_style") != core_style:
+                self.canvas.itemconfigure(
+                    rec["core"], state="normal", fill=core_fill,
+                    outline=core_outline, width=core_width)
+                rec["_core_style"] = core_style
+            self.canvas.coords(rec["core"], px - core, py - core,
+                               px + core, py + core)
+            # 普通星只留一圈本星色；纯白芯会把「颜色 = 情绪」吃掉。
+            # 悬停/选中的那颗才给白色高光，提醒你正在看它。
+            inner_normal = bool(core > 3 and hot)
+            if core > 3 and hot:
+                inner_style = ("normal", "#f4f8ff")
+            else:
+                inner_style = ("hidden", "")
+            if was_culled or rec.get("_inner_style") != inner_style:
+                self.canvas.itemconfigure(rec["inner"], state=inner_style[0],
+                                          fill=inner_style[1])
+                rec["_inner_style"] = inner_style
+            if inner_normal:
+                self.canvas.coords(rec["inner"], px - core * 0.22, py - core * 0.22,
+                                   px + core * 0.22, py + core * 0.22)
             if echo or ambient or float(n.get("ret") or 0) < 0.25:
                 rr = max(4.0, core * (2.15 if ambient and not echo else 1.9))
-                self.canvas.itemconfigure(
-                    rec["ring"], state="normal",
-                    outline="#ffb35c" if ambient and not echo else "#9aa7b8")
+                ring_style = ("normal",
+                              "#ffb35c" if ambient and not echo else "#9aa7b8", rr)
+                if was_culled or rec.get("_ring_style") != ring_style:
+                    self.canvas.itemconfigure(
+                        rec["ring"], state="normal",
+                        outline=ring_style[1])
+                    rec["_ring_style"] = ring_style
                 self.canvas.coords(rec["ring"], px - rr, py - rr, px + rr, py + rr)
-            else:
+            elif rec.get("_ring_style") != ("hidden", "", 0):
                 self.canvas.itemconfigure(rec["ring"], state="hidden")
-            # 选中与悬停的额外亮边
-            if n is self.picked or n is self.hover:
-                self.canvas.itemconfigure(rec["core"], outline="#eaf4ff", width=1.2)
+                rec["_ring_style"] = ("hidden", "", 0)
             order.append((pz, gid))
         order.sort(reverse=True)
-        for _pz, gid in order:
-            rec = self._node_items[gid]
-            self.canvas.tag_raise(rec["glow"])
-            self.canvas.tag_raise(rec["core"], rec["glow"])
-            self.canvas.tag_raise(rec["ring"], rec["core"])
-            self.canvas.tag_raise(rec["inner"], rec["core"])
+        order_key = tuple(gid for _pz, gid in order)
+        if order_key != self._order_key:
+            for _pz, gid in order:
+                rec = self._node_items[gid]
+                self.canvas.tag_raise(rec["glow"])
+                self.canvas.tag_raise(rec["core"], rec["glow"])
+                self.canvas.tag_raise(rec["ring"], rec["core"])
+                self.canvas.tag_raise(rec["inner"], rec["core"])
+            self._order_key = order_key
+        else:
+            # 静止/微动时深度顺序没变，不要每帧把 900 多个 item 再 raise 一遍。
+            pass
         self._visible_order = [self.by_id.get(g) for _pz, g in order if self.by_id.get(g)]
 
     def _ui_occluders(self) -> list[tuple[float, float, float, float]]:
@@ -1967,16 +2064,12 @@ class DesktopApp:
         cands.sort(key=lambda x: -x[0])
         shown = 0
         placed: list[tuple[float, float, float, float]] = []
-        drawn: set[str] = set()
+        visible: set[str] = set()
         for _score, n, rec, sx, sy, r, hot in cands:
             if shown >= limit:
-                self.canvas.itemconfigure(rec["lbg"], state="hidden")
-                self.canvas.itemconfigure(rec["ltxt"], state="hidden")
                 continue
             text = str(n.get("label") or "")[:14]
             if not text:
-                self.canvas.itemconfigure(rec["lbg"], state="hidden")
-                self.canvas.itemconfigure(rec["ltxt"], state="hidden")
                 continue
             f = self.f_hot if hot else self.f_small
             tw = f.measure(text)
@@ -1986,14 +2079,10 @@ class DesktopApp:
             if any(not (bx - 5 > px + pw + 3 or bx + bw + 3 < px - 5
                         or by - 3 > py + ph + 2 or by + bh + 2 < py - 3)
                    for px, py, pw, ph in placed):
-                self.canvas.itemconfigure(rec["lbg"], state="hidden")
-                self.canvas.itemconfigure(rec["ltxt"], state="hidden")
                 continue
             if any(not (bx > ox2 + 2 or bx + bw < ox1 - 2
                         or by > oy2 + 2 or by + bh < oy1 - 2)
                    for ox1, oy1, ox2, oy2 in occluders):
-                self.canvas.itemconfigure(rec["lbg"], state="hidden")
-                self.canvas.itemconfigure(rec["ltxt"], state="hidden")
                 continue
             placed.append((bx, by, bw, bh))
             self.canvas.itemconfigure(rec["lbg"], state="normal")
@@ -2002,15 +2091,15 @@ class DesktopApp:
                                       fill="#edf4ff" if hot else "#b7c7dc",
                                       font=f)
             self.canvas.coords(rec["ltxt"], sx, ly)
-            drawn.add(str(n.get("id")))
+            visible.add(str(n.get("id")))
             shown += 1
-        # 只保留这一帧真正画出来的标签。候选里因撞字被跳过的也要清掉，
-        # 否则上一帧的旧标签会一直留在画布上，越积越像一坨墨。
-        for gid, rec in self._node_items.items():
-            if gid in drawn:
-                continue
-            self.canvas.itemconfigure(rec["lbg"], state="hidden")
-            self.canvas.itemconfigure(rec["ltxt"], state="hidden")
+        # 只隐藏上一帧真实显示过、这一帧被挤掉的标签；不要每帧遍历全部节点。
+        for gid in self._label_visible - visible:
+            rec = self._node_items.get(gid)
+            if rec:
+                self.canvas.itemconfigure(rec["lbg"], state="hidden")
+                self.canvas.itemconfigure(rec["ltxt"], state="hidden")
+        self._label_visible = visible
 
     def _render_selection(self, now: float, cam: tuple[float, ...]) -> None:
         if not self.picked:
@@ -2069,19 +2158,23 @@ class DesktopApp:
 
     def _render_edges(self, now: float, cam: tuple[float, ...]) -> None:
         _cy, _sy, _cp, _sp, dist, _focal, _rmax = cam
+        picked_id = str(self.picked.get("id")) if self.picked else ""
+        active: set[int] = set()
         for item, e in self._edge_items:
+            # 选中一颗星时，连到它的边不论权重都补画，否则只画前 EDGE_BUDGET 条。
+            incident = bool(picked_id and (
+                str(e.get("a")) == picked_id or str(e.get("b")) == picked_id))
+            if len(active) >= EDGE_BUDGET and not incident:
+                continue
             A, B = e["A"], e["B"]
             if not self._shown(A) or not self._shown(B):
-                self.canvas.itemconfigure(item, state="hidden")
                 continue
             a = A.get("_screen", (0, 0, 0, 0, 0))
             b = B.get("_screen", (0, 0, 0, 0, 0))
             if not a[3] or not b[3]:
-                self.canvas.itemconfigure(item, state="hidden")
                 continue
             if self.echo_only and not any(
                     x.get("is_echo") or x.get("is_ambient") for x in (A, B)):
-                self.canvas.itemconfigure(item, state="hidden")
                 continue
             pts: list[float] = []
             ax, ay, az = A["px3"], A["py3"], A["pz3"]
@@ -2101,7 +2194,6 @@ class DesktopApp:
                     break
                 pts.extend((px, py))
             if len(pts) < 4:
-                self.canvas.itemconfigure(item, state="hidden")
                 continue
             act = max(self._act_alpha(A, now), self._act_alpha(B, now))
             zavg = (a[2] + b[2]) * 0.5
@@ -2117,8 +2209,14 @@ class DesktopApp:
             if self.picked and not link:
                 color = "#2c4260"
             self.canvas.coords(item, *pts)
-            self.canvas.itemconfigure(item, state="normal", fill=hex_mix(BG, color, alpha),
+            self.canvas.itemconfigure(item, state="normal",
+                                      fill=hex_mix(BG, color, alpha),
                                       width=2 if link else 1)
+            active.add(item)
+        # 只隐藏上一帧画过、这一帧没画的边；不要每帧遍历 1000 条边。
+        for item in self._edge_drawn - active:
+            self.canvas.itemconfigure(item, state="hidden")
+        self._edge_drawn = active
 
     # ---- 出生期动画 -------------------------------------------------------
     def _render_birth(self, now: float) -> None:
@@ -2211,6 +2309,7 @@ class DesktopApp:
             "moved": 0.0, "px": float(event.x), "py": float(event.y),
             "t": _now(),
         }
+        self._mark_dirty(0.25)
         try:
             self.canvas.configure(cursor="fleur")
         except Exception:
@@ -2232,6 +2331,7 @@ class DesktopApp:
         self.cam["vyaw"] = clamp(self.cam["vyaw"] * 0.5 + vy * 0.5, -5, 5)
         self.cam["vpitch"] = clamp(self.cam["vpitch"] * 0.5 + vp * 0.5, -4, 4)
         d["px"], d["py"], d["t"] = float(event.x), float(event.y), now
+        self._mark_dirty(0.30)
 
     def _on_release(self, event: tk.Event) -> None:
         d = self.drag_data
@@ -2246,6 +2346,7 @@ class DesktopApp:
         if math.hypot(self.cam["vyaw"], self.cam["vpitch"]) < 0.12:
             self.cam["vyaw"] = 0.0
             self.cam["vpitch"] = 0.0
+        self._mark_dirty(0.55)
         if d["moved"] >= 5:
             return
         now = _now()
@@ -2270,6 +2371,7 @@ class DesktopApp:
         h = self._pick(float(event.x), float(event.y))
         if h is not self.hover:
             self.hover = h
+            self._mark_dirty(0.12)
             try:
                 self.canvas.configure(cursor="hand2" if h else "")
             except Exception:
@@ -2279,6 +2381,7 @@ class DesktopApp:
         self.cam["tween"] = None
         dy = float(event.delta)
         self.cam["tzoom"] = clamp(self.cam["tzoom"] * math.exp(-dy * 0.0012), 0.4, 4.0)
+        self._mark_dirty(0.55)
 
     def reset_view(self) -> None:
         y1 = 0.62
@@ -2294,12 +2397,14 @@ class DesktopApp:
         }
         self.cam["vyaw"] = self.cam["vpitch"] = 0.0
         self.cam["tzoom"] = 1.0
+        self._mark_dirty(0.65)
 
     # ---- 时间轴 -----------------------------------------------------------
     def _on_time(self, value: str) -> None:
         self.t_now = clamp(float(value) / 1000.0, 0.0, 1.0)
         if self.picked and not self._shown(self.picked):
             self.clear_pick()
+        self._mark_dirty(0.15)
 
     def _shown(self, n: dict) -> bool:
         if self.birth or not self.t_max:
@@ -2318,6 +2423,7 @@ class DesktopApp:
         self._set_say("")
         if hasattr(self, "_visible_order"):
             self._visible_order = list(self.by_id.values())
+        self._mark_dirty(0.10)
 
     def recall(self, n: dict) -> None:
         self.picked = n
@@ -2358,6 +2464,7 @@ class DesktopApp:
             self._set_say(f"想起「{n.get('label')}」，这条还孤零零的，没有连线")
         self.show_card(n)
         self.ui_card.place(relx=1.0, x=-20, y=72, anchor="ne", width=340)
+        self._mark_dirty(2.4)
 
     def _set_say(self, text: str, clear_after: float = 0.0) -> None:
         if self._say_clear_job:

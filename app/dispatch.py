@@ -451,7 +451,7 @@ def main(argv: list[str] | None = None) -> int:
         if a.stats:
             print(json.dumps(s.stats(), ensure_ascii=False, indent=2))
             return 0
-        truth = think(a.text, mind=mind, mem=mem)
+        truth = think(a.text, mind=mind, mem=mem, modulate=False)
         r = s.dispatch(a.text, truth, footprint=False)
         print(f"输入：{a.text}")
         print("调度链：" + " → ".join(r["chain"]))

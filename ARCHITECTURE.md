@@ -21,6 +21,8 @@ Chat.turn / turn_stream
         ↓
 记忆召回（Memory / Sihai / Dispatch） + 情绪与关系（Affect / Mind）
         ↓
+情绪调制（AffectModulator：ContentPlan / StylePlan，off/shadow/enforced）
+        ↓
 LLM（OpenAI 兼容接口）
         ↓
 自然回应闸门（ResponseGate）
@@ -36,6 +38,7 @@ LLM（OpenAI 兼容接口）
 - `app/memory.py`：SQLite 记忆存储，经历、事实、轮次、强度、来源、撤回。
 - `app/dispatch.py`：唤醒 → 竞争 → 扩散 → 星光 → 心流。
 - `app/affect.py` / `app/emotion.py` / `app/desire.py` / `app/mind.py`：情绪、七情六欲、关系与状态。
+- `app/affect_modulator.py`：把当轮情绪转成内容计划与表达计划；只读上游契约，不写库、不调模型。
 - `app/sihai.py`：星图数据与本地 HTTP 服务。
 - `app/desktop.py`：Tkinter 桌面窗口。
 - `app/pocket_server.py`：手机/网页服务，`/api/chat` 与 SSE。

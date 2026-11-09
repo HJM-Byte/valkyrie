@@ -35,6 +35,8 @@ data/pocket_token.txt
 *.sqlite3
 *.log
 *.jsonl
+# 情绪调制验收用例是代码的一部分；其余运行时用例仍不公开
+!tools/acceptance/cases/A*.jsonl
 
 # --- 模型与二进制 -----------------------------------------------------------
 /models/

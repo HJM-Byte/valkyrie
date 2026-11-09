@@ -36,6 +36,7 @@ import time
 from typing import Optional
 
 from . import affect as _affect
+from . import affect_modulator as _modulator
 from . import appraisal as _appraisal
 from . import config as _cfg
 from .memory import arousal_of, emotion_of, valence_of
@@ -603,12 +604,15 @@ def _trace_lines(p: dict, ap: dict, spot: dict, rec: dict, own_: dict,
 
 def think(text: str, mind=None, mem=None, now: Optional[float] = None,
           state: Optional[dict] = None, channel: str = "text",
-          feedback: Optional[dict] = None, reinforce: bool = False) -> dict:
+          feedback: Optional[dict] = None, reinforce: bool = False,
+          event_id: Optional[str] = None, modulate: bool = True) -> dict:
     """跑完一整条：一句话 → 要不要抬头、想到了什么、怎么回。
 
     feedback 是上一轮回答前策略的结果；只交给 appraisal 调这一次的措辞，
     不参与评价、竞争、召回和决策。
     reinforce=True 只由真实对话 turn 传；只读预览/调试默认不强化记忆。
+    modulate=False 只给副作用路径（如 dispatch 的只读真值检查）用：
+    仍然跑评价和情绪，但不生成/记录情绪调制计划。
     """
     if state is None:
         state = mind.snapshot(now) if mind is not None else _empty_state()
@@ -628,12 +632,13 @@ def think(text: str, mind=None, mem=None, now: Optional[float] = None,
     spot = compete(p, ap, state, rec["activation"], rec["hits"])
     own_ = own(p, rec["hits"])
     rel = relate(state)
-    dec = decide(p, ap, spot, rec["hits"], state, rec)
+    dec0 = decide(p, ap, spot, rec["hits"], state, rec)
 
     # 情绪场：这一轮的评价落在她身上，成了哪几股情绪。
     # 不是「他说难受 → 她委屈」这种单标签映射，而是评价 + 旧事残留 + 身体一起算。
+    # 先按上游基础决策算情绪，再让情绪去调制内容/表达；顺序不能倒。
     feel = _affect.step(_affect.from_state(state), p, ap, state,
-                        rec["hits"], ambient, dec)
+                        rec["hits"], ambient, dec0)
 
     # 三类对象只读评价：用户情绪假设、她的当下状态、关系评价。
     # 它不参与决定，也不改状态；先让证据分开，后面才谈调节和表达。
@@ -647,11 +652,26 @@ def think(text: str, mind=None, mem=None, now: Optional[float] = None,
         pre["applied"] = True
         # 回答前这一层单独进提示；不覆盖决策本身，也不和决策里的字数限制打架。
         try:
-            dec["max_chars"] = int(pre.get("max_chars") or dec.get("max_chars") or 60)
+            dec0["max_chars"] = int(pre.get("max_chars") or dec0.get("max_chars") or 60)
         except (TypeError, ValueError):
             pass
-        dec["pre_answer"] = pre
+        dec0["pre_answer"] = pre
         three["regulation"] = pre
+
+    # 情绪内容与表达调制：默认 off 不改任何行为；shadow 只记录；enforced 才进提示。
+    # 它只读上游契约，不写库、不调模型、不改证据资格。
+    mod = None
+    if modulate:
+        try:
+            mod = _modulator.modulate_for_turn(
+                text, p, feel, state, three, dec0, rec["hits"],
+                event_id=event_id or "")
+            _modulator.log_result(mod)
+        except Exception:
+            mod = None
+    # off 必须回到原路径：连决策对象都不附加调制计划，避免“关了但还留痕”。
+    dec = (_modulator.apply_to_decision(dec0, mod)
+           if mod is not None and mod.mode != "off" else dec0)
 
     A = spot["candidates"][0]["A"]
     mode = "respond" if A >= THETA else ("ack" if A >= ACK_BAND else "quiet")
@@ -673,7 +693,20 @@ def think(text: str, mind=None, mem=None, now: Optional[float] = None,
         "gate": {"score": round(A, 3), "mode": mode, "emotion": p["emotion"]},
         "awareness_text": _awareness_text(spot, ap, state, feel),
     }
+    if mod is not None and mod.mode != "off":
+        th["affect_modulation"] = mod.as_dict()
     th["trace"] = _trace_lines(p, ap, spot, rec, own_, rel, dec, feel)
+    if mod is not None and mod.mode != "off":
+        if mod.applied:
+            th["trace"].append(
+                f"情绪调制  {mod.scene} · {mod.content_plan.core_intent} · "
+                f"{mod.style_plan.tone}/{mod.style_plan.length}（已应用）")
+        elif mod.mode == "shadow":
+            th["trace"].append(
+                f"情绪调制  shadow · {mod.scene} · "
+                f"{mod.content_plan.core_intent}/{mod.style_plan.tone}（只记录）")
+        elif mod.fallback_reason:
+            th["trace"].append(f"情绪调制  未应用：{mod.fallback_reason}")
     if pre.get("applied"):
         th["trace"].append(f"回答前  {pre['strategy']}：{pre['note']}（只改表达）")
     if pre.get("feedback_informed"):
@@ -696,6 +729,14 @@ def think(text: str, mind=None, mem=None, now: Optional[float] = None,
         "pre_answer_feedback": pre.get("feedback_action") or "",
         "pre_answer_feedback_informed": bool(pre.get("feedback_informed")),
         "confidence": dec["confidence"], "max_chars": dec["max_chars"],
+        "affect_modulation": ({
+            "mode": mod.mode, "applied": mod.applied, "scene": mod.scene,
+            "intensity_band": mod.intensity_band,
+            "core_intent": mod.content_plan.core_intent,
+            "question_budget": mod.content_plan.question_budget,
+            "tone": mod.style_plan.tone, "length": mod.style_plan.length,
+            "fallback_reason": mod.fallback_reason,
+        } if mod is not None and mod.mode != "off" else {}),
         "desire": {"top": de.get("top_label") or "",
                    "strength": de.get("strength") or 0.0,
                    "frustration": de.get("frustration") or 0.0,
@@ -708,7 +749,7 @@ def think(text: str, mind=None, mem=None, now: Optional[float] = None,
 
 def gate(text: str, state: dict) -> dict:
     """只要「该不该接」这一个判断时用它。mind.salience 走这里。"""
-    th = think(text, state=state)
+    th = think(text, state=state, modulate=False)
     return th["gate"]
 
 

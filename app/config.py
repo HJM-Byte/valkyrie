@@ -313,6 +313,24 @@ RESPONSE_GATE_LOG = os.environ.get(
 RESPONSE_GATE_DIR = DATA / "response_gate"
 RESPONSE_GATE_STATE = RESPONSE_GATE_DIR / "state.json"
 
+# --- 情绪内容与表达调制（2026-11-09 施工方案）------------------------------
+# off：保持原行为；shadow：只记录计划，不改提示/输出；enforced：接入提示词。
+# 内容与表达可独立关闭；第一版每轮最多一个可选追问。
+AFFECT_MODULATION_MODE = (os.environ.get(
+    "ROBOT_AFFECT_MODULATION_MODE", "off") or "off").strip().lower()
+if AFFECT_MODULATION_MODE not in ("off", "shadow", "enforced"):
+    AFFECT_MODULATION_MODE = "off"
+AFFECT_CONTENT = os.environ.get("ROBOT_AFFECT_CONTENT", "1") != "0"
+AFFECT_STYLE = os.environ.get("ROBOT_AFFECT_STYLE", "1") != "0"
+AFFECT_MODULATION_LOG = os.environ.get(
+    "ROBOT_AFFECT_MODULATION_LOG", "1") != "0"
+try:
+    AFFECT_MAX_OPTIONAL_QUESTIONS = int(os.environ.get(
+        "ROBOT_AFFECT_MAX_OPTIONAL_QUESTIONS", "1") or "1")
+except (TypeError, ValueError):
+    AFFECT_MAX_OPTIONAL_QUESTIONS = 1
+AFFECT_MODULATION_DIR = DATA / "affect_modulation"
+
 # --- 下位机 -----------------------------------------------------------------
 SERIAL_BAUD = 115200
 SERIAL_TIMEOUT = 0.05

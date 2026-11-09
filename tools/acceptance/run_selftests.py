@@ -23,6 +23,7 @@ MODULES = [
     "tools.selftest_memory",
     "tools.selftest_learning",
     "tools.selftest_mind",
+    "tools.selftest_affect_modulation",
 ]
 
 

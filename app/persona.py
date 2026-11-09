@@ -20,6 +20,7 @@ from typing import Optional
 
 from . import config as C
 from . import temporal
+from .affect_modulator import prompt_block as _affect_block
 from .emotion import text_block as _expression_block
 
 PERSONA_MD = C.PROJECT / "PERSONA.md"
@@ -141,6 +142,9 @@ class Persona:
             expr = _expression_block(expression)
             if expr:
                 parts.append(expr)
+            affect = _affect_block((thought or {}).get("affect_modulation") or {})
+            if affect:
+                parts.append(affect)
             return "\n\n".join(parts)
 
         # 老调用方（没跑 think 的）还能用：退回原来按显著性给的那两档
@@ -234,6 +238,10 @@ class Persona:
         expr = _expression_block(expression)
         if expr:
             parts.append(expr)
+
+        affect = _affect_block((thought or {}).get("affect_modulation") or {})
+        if affect:
+            parts.append(affect)
 
         tail = [self.block("speech"), self.block("boundary")]
         if channel == "text":

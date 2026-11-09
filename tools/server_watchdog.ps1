@@ -60,6 +60,7 @@ if (-not (Test-Path -LiteralPath $py)) {
 try {
     Start-Process -FilePath $py `
         -ArgumentList @('-m', 'app.pocket_server', '--lan', '--chat',
+                        '--proactive',
                         '--response-gate', 'enforced', '--social-silence', 'on') `
         -WorkingDirectory $robot `
         -WindowStyle Hidden `

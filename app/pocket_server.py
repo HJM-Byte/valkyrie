@@ -1845,6 +1845,16 @@ def main(argv: Optional[list[str]] = None) -> int:
                         continue
                     rec = pstore.record(res["text"], kind=res.get("kind") or "ask",
                                         seed=key)
+                    if seed.get("kind") == "topic" and isinstance(seed.get("plan"), dict):
+                        try:
+                            from . import proactive_topic as PT
+                            PT.log_plan(
+                                seed["plan"], mode_name="enforced",
+                                trigger_event_id="proactive-worker",
+                                candidate_added_to_real_set=True,
+                                visible_message_created=True)
+                        except Exception:
+                            pass
                     print(f"[{datetime.now():%m-%d %H:%M}] 她先开口："
                           f"{rec['text']}", flush=True)
                 except Exception as e:

@@ -135,6 +135,11 @@ class TwoStepGate:
     calls = 0
     logged = 0
 
+    def __init__(self) -> None:
+        self.calls = 0
+        self.logged = 0
+        self.event_ids: list[str] = []
+
     def is_quiet(self, now=None):
         return False
 
@@ -143,6 +148,7 @@ class TwoStepGate:
 
     def decide(self, *a, **k):
         self.calls += 1
+        self.event_ids.append(str(k.get("event_id") or ""))
         if self.calls >= 2:
             d = SimpleNamespace(mode="pause_stated", reason="user_quiet",
                                 event_id="proactive:test")
@@ -398,6 +404,9 @@ def main() -> int:
         check("发送前重检安静状态，生成后撤回",
               res_gate.get("ok") is False and res_gate.get("silent") is True
               and gate.logged >= 1, str(res_gate))
+        check("两次闸门事件 id 不同，不会被 duplicate_event 吞掉",
+              len(gate.event_ids) >= 2 and gate.event_ids[0] != gate.event_ids[1],
+              str(gate.event_ids))
         fake.response_gate = FakeGate()
         cap_empty = FakeLLM("")
         fake._proactive_llm = cap_empty

@@ -46,6 +46,7 @@ def main() -> int:
         check(status == 200 and health.get("app") == "valkyrie-pocket", "health is valkyrie-pocket")
         check(health.get("version") == "0.8.0", "health version 0.8.0")
         check(health.get("response_gate", {}).get("mode") == "enforced", "response gate enforced")
+        check(health.get("proactive") is True, "proactive worker enabled")
     except Exception as e:
         check(False, f"health request: {type(e).__name__}: {e}")
 
@@ -95,8 +96,10 @@ def main() -> int:
     guard = ROOT / "tools" / "server_watchdog.ps1"
     guard_text = guard.read_text(encoding="utf-8", errors="ignore") if guard.exists() else ""
     check(guard.exists() and "--chat" in guard_text, "watchdog starts chat")
-    check("--autonomy" not in guard_text and "--proactive" not in guard_text,
-          "watchdog does not start autonomy/proactive")
+    check("--proactive" in guard_text,
+          "watchdog starts proactive")
+    check("--autonomy" not in guard_text,
+          "watchdog does not start autonomy")
     check((ROOT / "tools" / "install_web_persistence.ps1").exists(), "persistence installer exists")
     startup = Path.home() / "AppData" / "Roaming" / "Microsoft" / "Windows" / "Start Menu" / "Programs" / "Startup" / "Valkyrie Web.lnk"
     check(startup.exists(), "startup shortcut exists")

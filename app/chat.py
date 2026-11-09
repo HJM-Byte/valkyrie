@@ -458,10 +458,17 @@ class Chat:
         if not seed.get("ok"):
             return {"ok": False, "reason": seed.get("reason") or "没有由头"}
         gate = self.response_gate
+        # 主动消息会先做一次出闸预检，生成后再复核一次。两次必须是不同事件：
+        # 同一个 event_id 的第二次 decide 会被 duplicate_event 直接吞掉，
+        # 导致所有 topic 计划永远发不出去。seed 本身仍负责去重。
+        attempt_id = str(time.time_ns())
+        seed_key = str(seed.get("seed") or int(time.time()))
+        pre_event_id = f"proactive-check:{seed_key}:{attempt_id}"
+        post_event_id = f"proactive:{seed_key}:{attempt_id}"
         if gate.mode != "off":
             gd = gate.decide(
                 "", channel="proactive",
-                event_id="proactive:" + str(seed.get("seed") or int(time.time())),
+                event_id=pre_event_id,
                 promise_due=str(seed.get("kind") or "") == "promise",
                 quiet=gate.is_quiet(), batch_complete=True)
             if gate.mode == "enforced" and gd.mode in ("silent", "defer", "pause_stated"):
@@ -570,7 +577,7 @@ class Chat:
                 if gate2.mode != "off":
                     gd2 = gate2.decide(
                         "", channel="proactive",
-                        event_id="proactive:" + str(seed.get("seed") or ""),
+                        event_id=post_event_id,
                         promise_due=False, quiet=gate2.is_quiet(),
                         batch_complete=True)
                     if gate2.mode == "enforced" and gd2.mode in (
@@ -578,6 +585,10 @@ class Chat:
                         try:
                             gate2.log(gd2, llm_called=True,
                                       assistant_message_created=False)
+                        except Exception:
+                            pass
+                        try:
+                            PT.mark_failed(topic_plan)
                         except Exception:
                             pass
                         return {"ok": False, "silent": True,

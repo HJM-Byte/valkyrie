@@ -258,10 +258,15 @@ def main() -> int:
           all(c["A"] >= THETA for c in th["compete"]["awareness"]))
     check("识海：事件本身在候选里", th["compete"]["candidates"][0]["id"] == "event")
     check("末那识：没有记忆时一律算听来的", th["ownership"]["owner"] == "听来的")
-    check("思维：输出里带完整链路（九行，含六欲）", len(th["trace"]) == 9,
-          str(len(th["trace"])))
+    # 九行是旧基线；情绪调制 enforced 时会多一行「调制」审计，
+    # 不能因此把主链路判成失败。
+    check("思维：输出里带完整链路（九行，含六欲）",
+          len(th["trace"]) in (9, 10), str(len(th["trace"])))
     check("思维：链路上有六欲那一行", any(s.startswith("六欲") for s in th["trace"]),
           str(th["trace"][-2:]))
+    if len(th["trace"]) == 10:
+        check("思维：调制开启时多一行审计",
+              any("调制" in s for s in th["trace"]), str(th["trace"][-2:]))
 
     from app.persona import Persona as _P
     pp = _P()

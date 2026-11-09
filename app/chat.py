@@ -293,11 +293,115 @@ class Chat:
         except Exception:
             return {}
 
+    def _proactive_baseline(self, snap: dict,
+                            now: Optional[float] = None) -> dict:
+        """原有主动候选：承诺 > 自习问题 > 久未说话。"""
+        try:
+            top = self.autonomy.top(snap, now)
+        except Exception:
+            top = None
+        if top and float(top.get("intensity") or 0) >= 0.26:
+            q = str(top.get("question") or "").strip()
+            if q:
+                return {"ok": True, "kind": "ask", "question": q,
+                        "seed": "ask:" + q[:80],
+                        "intensity": float(top.get("intensity") or 0)}
+        silent = float(snap.get("silent_h") or 0)
+        lonely = float(snap.get("lonely") or 0)
+        if silent >= 8.0 or lonely >= 0.45:
+            day = time.strftime("%Y-%m-%d")
+            return {"ok": True, "kind": "greet", "question": "",
+                    "seed": "greet:" + day,
+                    "silent_h": silent, "lonely": lonely}
+        self._record_silence("no_value", "此刻没有足够的主动理由",
+                             "proactive", now)
+        return {"ok": False, "silent": True,
+                "reason": "此刻没有想主动说的事", "reason_code": "no_value"}
+
+    def _topic_style_block(self, plan: dict, snap: dict) -> str:
+        """复用情绪调制的 StylePlan；失败只回退到人格基线。"""
+        try:
+            from . import affect_modulator as AM
+            base = AM.BaseTurnPlan(
+                required_intents=list(plan.get("required_intents") or []),
+                eligible_claim_ids=list(plan.get("eligible_claim_ids") or []),
+                required_notices=[],
+                base_order=["answer", "optional"],
+                core_intent="casual",
+            )
+            ctx = AM.AffectContext(
+                event_id=str(plan.get("plan_id") or "proactive_topic"),
+                self_state=dict((snap or {}).get("feel") or {}),
+                scene="casual",
+                response_mode="respond",
+            )
+            res = AM.modulate(
+                ctx, base,
+                max_optional_questions=int(plan.get("question_budget") or 0))
+            if not res.applied:
+                return ""
+            # 只取 StylePlan；ContentPlan 的可选内容/追问不能盖过
+            # ProactivePlan 已经定下的问题预算。
+            s = res.style_plan
+            tone = {"warm": "温和", "calm": "平静", "playful": "轻快",
+                    "serious": "认真", "firm": "坚定"}.get(s.tone, s.tone)
+            length = {"short": "短", "normal": "正常",
+                      "full": "完整"}.get(s.length, s.length)
+            direct = {"low": "低", "normal": "正常",
+                      "high": "高"}.get(s.directness, s.directness)
+            humor = "一点" if s.humor == "light" else "关"
+            return ("【这一轮的表达方式】\n"
+                    f"- 语气：{tone}；篇幅：{length}；直接程度：{direct}；"
+                    f"幽默：{humor}。\n"
+                    "- 只改分寸，不改事实、证据、来源和已经定下的内容边界。")
+        except Exception:
+            return ""
+
+    def _proactive_topic_seed(self, snap: dict, baseline: dict,
+                              now: Optional[float] = None) -> dict:
+        """只读采集新话题；off 不进来，shadow 只记，enforced 才交给现有生成。"""
+        from . import proactive_topic as PT
+        m = PT.mode()
+        if m == "off":
+            return baseline
+        try:
+            seeds, errors = PT.collect_seeds(
+                mem=self.mem, mind=self.mind, autonomy=self.autonomy,
+                p3=self.p3, now=now)
+            plans = PT.plan_candidates(seeds=seeds, now=now, mode_name=m)
+            if not plans:
+                return baseline
+            plan = plans[0]
+            if m == "shadow":
+                PT.log_shadow_once(
+                    plan, trigger_event_id="proactive-worker",
+                    extra={"provider_errors": sorted(errors)} if errors else None)
+                return baseline
+            # 有效承诺仍走原来的提醒路径；新话题不抢必要提醒。
+            if str(baseline.get("kind") or "") == "promise":
+                return baseline
+            style = self._topic_style_block(plan.as_dict(), snap)
+            PT.log_plan(
+                plan, mode_name="enforced",
+                trigger_event_id="proactive-worker",
+                candidate_added_to_real_set=True,
+                visible_message_created=False,
+                extra={"provider_errors": sorted(errors)} if errors else None)
+            return {"ok": True, "kind": "topic",
+                    "plan": plan.as_dict(), "style_block": style,
+                    "seed": "topic:" + plan.novelty_key,
+                    "why_now": plan.why_now,
+                    "new_value": plan.new_value}
+        except Exception:
+            # 新候选失败只影响自己；原候选照旧。
+            return baseline
+
     def proactive_seed(self, now: Optional[float] = None) -> dict:
         """她此刻有没有一个「要主动找他」的由头。
 
         优先级：有效承诺 > 当前情绪/自习 > 久未说话。没有由头就记录一次
-        正式沉默，不为了「定时问候」硬造一句。
+        正式沉默，不为了「定时问候」硬造一句。主动话题开启后，只增加候选；
+        off 时完全不读取新提供者。
         """
         if GROWTH_LOCKED:
             return {"ok": False, "reason": "出生期不主动发"}
@@ -341,27 +445,8 @@ class Chat:
             self._record_silence("low_energy", "精力太低，先不发", "proactive", now)
             return {"ok": False, "silent": True, "reason": "精力太低，先不发",
                     "reason_code": "low_energy"}
-        try:
-            top = self.autonomy.top(snap, now)
-        except Exception:
-            top = None
-        if top and float(top.get("intensity") or 0) >= 0.26:
-            q = str(top.get("question") or "").strip()
-            if q:
-                return {"ok": True, "kind": "ask", "question": q,
-                        "seed": "ask:" + q[:80],
-                        "intensity": float(top.get("intensity") or 0)}
-        silent = float(snap.get("silent_h") or 0)
-        lonely = float(snap.get("lonely") or 0)
-        if silent >= 8.0 or lonely >= 0.45:
-            day = time.strftime("%Y-%m-%d")
-            return {"ok": True, "kind": "greet", "question": "",
-                    "seed": "greet:" + day,
-                    "silent_h": silent, "lonely": lonely}
-        self._record_silence("no_value", "此刻没有足够的主动理由",
-                             "proactive", now)
-        return {"ok": False, "silent": True,
-                "reason": "此刻没有想主动说的事", "reason_code": "no_value"}
+        baseline = self._proactive_baseline(snap, now)
+        return self._proactive_topic_seed(snap, baseline, now)
 
     def proactive(self, seed: Optional[dict] = None) -> dict:
         """生成她主动发出去的那一句；不写记忆、不唤醒休眠。
@@ -394,7 +479,12 @@ class Chat:
             channel="text", learning=learning)
         kind = str(seed.get("kind") or "ask")
         question = str(seed.get("question") or "").strip()
-        if kind == "promise" and isinstance(seed.get("promise"), dict):
+        topic_plan = seed.get("plan") if kind == "topic" else None
+        if kind == "topic" and isinstance(topic_plan, dict):
+            from . import proactive_topic as PT
+            directive = PT.prompt_directive(
+                topic_plan, str(seed.get("style_block") or ""))
+        elif kind == "promise" and isinstance(seed.get("promise"), dict):
             p = seed["promise"]
             directive = (
                 "【这一轮是你先开口】\n"
@@ -443,10 +533,58 @@ class Chat:
         if len(text) > 100:
             text = text[:100].rstrip("，,、；; ")
         if not text:
+            if kind == "topic":
+                # 新话题生成失败就这一次不发；不自动二次生成，也不退回
+                # 原来的「你今天忙吗」硬凑一条。短期记住失败，避免每 20 秒
+                # 用同一计划重打模型。
+                try:
+                    from . import proactive_topic as PT
+                    PT.mark_failed(topic_plan)
+                except Exception:
+                    pass
+                return {"ok": False, "kind": kind,
+                        "reason": "topic_generation_failed",
+                        "seed": str(seed.get("seed") or ""), "error": err}
             if kind == "ask" and question:
                 text = f"我在想，{question.rstrip('？?')}，你怎么看？"
             else:
                 text = "你今天忙吗？我想听你说两句。"
+        if kind == "topic" and isinstance(topic_plan, dict):
+            try:
+                budget = int(topic_plan.get("question_budget") or 0)
+            except (TypeError, ValueError):
+                budget = 0
+            if budget <= 0 and re.search(r"[？?]\s*$", text):
+                try:
+                    from . import proactive_topic as PT
+                    PT.mark_failed(topic_plan)
+                except Exception:
+                    pass
+                return {"ok": False, "kind": kind,
+                        "reason": "question_budget_exceeded",
+                        "seed": str(seed.get("seed") or "")}
+        # 生成期间用户可能已经要求安静，或事件已过期；发送前再核一次。
+        if kind == "topic":
+            try:
+                gate2 = self.response_gate
+                if gate2.mode != "off":
+                    gd2 = gate2.decide(
+                        "", channel="proactive",
+                        event_id="proactive:" + str(seed.get("seed") or ""),
+                        promise_due=False, quiet=gate2.is_quiet(),
+                        batch_complete=True)
+                    if gate2.mode == "enforced" and gd2.mode in (
+                            "silent", "defer", "pause_stated"):
+                        try:
+                            gate2.log(gd2, llm_called=True,
+                                      assistant_message_created=False)
+                        except Exception:
+                            pass
+                        return {"ok": False, "silent": True,
+                                "reason": gd2.reason,
+                                "response_gate": gd2.as_dict()}
+            except Exception:
+                pass
         self._last_proactive = text
         self._last_proactive_ts = time.time()
         if kind == "promise":

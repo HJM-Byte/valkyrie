@@ -285,6 +285,24 @@ AUTONOMY_INTERVAL_MINUTES = int(os.environ.get(
 # 何时开口由 Chat 自己的由头和状态决定，不再按次数/间隔/夜间卡。
 PROACTIVE_ENABLED = os.environ.get("ROBOT_PROACTIVE_ENABLED", "1") != "0"
 
+# --- 主动话题与多样表达（2026-11-09 施工方案）------------------------------
+# off：原主动候选，完全不读新提供者；shadow：只记录计划；enforced：加入现有
+# 主动候选集，仍由同一个 worker、同一个发送队列执行。
+PROACTIVE_TOPIC_MODE = (os.environ.get(
+    "ROBOT_PROACTIVE_TOPIC_MODE", "off") or "off").strip().lower()
+if PROACTIVE_TOPIC_MODE not in ("off", "shadow", "enforced"):
+    PROACTIVE_TOPIC_MODE = "off"
+PROACTIVE_TOPIC_INTENTS = os.environ.get(
+    "ROBOT_PROACTIVE_TOPIC_INTENTS", "share,continue,react,care,play")
+try:
+    PROACTIVE_TOPIC_MAX_CANDIDATES = int(os.environ.get(
+        "ROBOT_PROACTIVE_TOPIC_MAX_CANDIDATES", "6") or "6")
+except (TypeError, ValueError):
+    PROACTIVE_TOPIC_MAX_CANDIDATES = 6
+PROACTIVE_TOPIC_LOG = os.environ.get(
+    "ROBOT_PROACTIVE_TOPIC_LOG", "1") != "0"
+PROACTIVE_TOPIC_DIR = DATA / "proactive_topic"
+
 # --- P4 记忆强化（随时间衰减） ----------------------------------------------
 # 召回一次会强化，但记忆越老强化越少，且上次强化留下的影响会退。
 # B0 是单次强化的最大增量；BMAX 是强度上限；两个 τ 都以天计。

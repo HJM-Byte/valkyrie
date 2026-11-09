@@ -60,7 +60,9 @@ def main() -> int:
             check("单次事件仍保留证据",
                   one["evidence_count"] == 1, one)
 
-            p3.add_climate_event("cold", source_text="随便你", ts=now - 86400)
+            # 用 30 小时而不是整 24 小时：凌晨跑测试时 24 小时前可能
+            # 仍落在同一个本地日历日，会让“跨日”断言变成时段依赖。
+            p3.add_climate_event("cold", source_text="随便你", ts=now - 30 * 3600)
             p3.add_climate_event("warm", source_text="陪我", ts=now - 7200)
             p3.add_climate_event("warm", source_text="谢谢你", ts=now - 1800)
             climate = p3.climate(now)

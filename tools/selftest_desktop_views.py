@@ -30,7 +30,7 @@ def check(cond: bool, name: str, detail: str = "") -> None:
 
 
 def main() -> int:
-    print("— 桌面端五视图与扇区布局 —")
+    print("— 桌面端八视图与扇区布局 —")
     g = prepare_graph(graph_payload(demo=True))
     nodes, edges = g["nodes"], g["edges"]
     check(len(nodes) > 10, "示例图有节点", f"n={len(nodes)}")
@@ -51,11 +51,13 @@ def main() -> int:
           _cluster_of({"id": "x", "kind": "episode", "emotion": "开心",
                        "day": "2026-11-02"}), "同一节点扇区稳定")
     check(_cluster_of({"kind": "fact", "label": "名字"}) == "fact:名", "事实单独成扇区")
-    # 桌面版五视图的入口键必须和网页版同名；这里只查常量，不建窗口。
+    # 桌面版八视图的入口键必须和网页版同名；这里只查常量，不建窗口。
     from app.desktop import VIEWS
-    check([k for k, _ in VIEWS] == ["thought", "dispatch", "learning", "echo", "diary"],
-          "五视图键齐全", str([k for k, _ in VIEWS]))
-    check(len({k for k, _ in VIEWS}) == 5, "五视图不重复")
+    check([k for k, _ in VIEWS] == ["thought", "dispatch", "learning",
+                                   "feedback", "meaning", "persona",
+                                   "echo", "diary"],
+          "八视图键齐全", str([k for k, _ in VIEWS]))
+    check(len({k for k, _ in VIEWS}) == 8, "八视图不重复")
     print(f"\nDESKTOP {ok} ok, {fail} fail")
     return 1 if fail else 0
 

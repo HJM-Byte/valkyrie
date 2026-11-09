@@ -3,12 +3,8 @@ chcp 65001 >nul
 setlocal
 cd /d "%~dp0"
 
-rem Optional exact web UI shell: desktop.cmd --web
-if /i "%~1"=="--web" (
-    call "%~dp0desktop_web.cmd"
-    exit /b %errorlevel%
-)
-
+rem Native desktop entry. The sihai shell is reimplemented in Tkinter in
+rem app\desktop.py; it does not wrap the browser or 8767.
 set "PYW=%~dp0.venv\Scripts\pythonw.exe"
 set "PY=%~dp0.venv\Scripts\python.exe"
 rem 2026-11-07: response gate is enforced by default.

@@ -6,7 +6,7 @@
 - README 明确 `GROWTH_LOCKED` 默认写入真实库、`--demo` 不写库，以及日记目录与数据目录的边界。
 - 从公开仓库移除学校模块：删除 `app/school.py`、`school.cmd`、`tools/selftest_school.py` 及其配置、预算、对话回接、服务入口和验收引用；学习与成长链路保持不变。
 - 识海滚动渲染：滚动面板改为不透明底色，去掉 `backdrop-filter`，加入 `overscroll-behavior: contain` 与 `scrollbar-gutter: stable`；桌面滚动步长固定，只在内容尺寸变化时更新 `scrollregion`，修复滚动时星海透底造成的闪动。
-- 新增 `desktop_web.cmd` / `desktop.cmd --web`：用 Edge 无边框窗口直接承载同一份 `sihai.html`，按需拉起 8767，视觉与网页识海页 1:1；原生 Tkinter 入口保留。
+- 桌面识海原生复刻：不再使用 Edge 承载网页，`app/desktop.py` 直接按 `sihai.html` 重画顶栏、八块胶囊导航、左侧面板、详情抽屉、思考线、时间轴与卡片；新增 `分寸`、`意义`、`人格` 三块只读视图，数据与 `Chat.panel_payload()` / `Memory` 同源。
 
 ## v0.1.0 — 2026-11-08
 

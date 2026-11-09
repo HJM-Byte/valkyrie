@@ -37,8 +37,7 @@
 
 ### 表达与入口
 
-- **桌面程序**：原生 Tkinter 窗口，对话、识海星图、记忆详情、时间轴和状态面板在一个窗口里。
-- **网页原版窗口**：`desktop.cmd --web`（或 `desktop_web.cmd`）把同一份 `sihai.html` 装进 Edge 无边框窗口，视觉与 `8767` 的识海页一致；它会按需拉起 8767。
+- **桌面程序**：原生 Tkinter 窗口，对话、识海星图、记忆详情、时间轴和状态面板在一个窗口里；识海页的顶栏、胶囊导航、左侧「她此刻」、详情抽屉与底部时间轴按 `sihai.html` 原生重画，不走浏览器、不嵌 8767。
 - **网页端**：`8766`，电脑宽屏是“镜面 + 识海”双栏，手机窄屏单列；可安装为 PWA。
 - **识海页**：`8767`，独立的只读星图页。
 - **自然回应**：`respond / brief / defer / silent / pause_stated` 五种模式；代码默认关闭，启动脚本显式打开。
@@ -135,8 +134,7 @@ BREEZE_VOICE_ID=voc_wkzpcy2xxwch
 ```cmd
 start.cmd               :: 统一菜单
 install.cmd             :: 一键安装/补依赖
-desktop.cmd             :: 桌面主入口（原生 Tkinter）
-desktop.cmd --web       :: 网页原版识海窗口（同一份 sihai.html）
+desktop.cmd             :: 桌面主入口（原生 Tkinter，识海界面原生复刻）
 web.cmd                 :: 网页端 8766
 sihai.cmd               :: 识海页 8767
 chat.cmd                :: 纯文字入口，不需要麦克风

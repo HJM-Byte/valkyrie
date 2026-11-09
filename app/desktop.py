@@ -1,8 +1,8 @@
 """瓦尔基里 · 识海 —— 桌面程序入口。
 
-网页版（`sihai.cmd` / 8767 的 sihai.html）是浏览器里的 canvas；这一版把同一套功能搬进
-一个真正的桌面窗口：星图、她现在的状态、记忆详情、时间轴、对话、
-语音输入与朗读都在程序里，不再启动本地 HTTP 服务。
+网页版（`sihai.cmd` / 8767 的 sihai.html）是浏览器里的 canvas；这一版按它
+原生重画同一套界面（顶栏、胶囊导航、左侧面板、详情抽屉、思考线、时间轴），
+星图、记忆详情、对话、语音输入与朗读都在程序里，不启动浏览器、不承载 8767。
 
     python -m app.desktop            # 真实数据
     python -m app.desktop --demo     # 示例数据
@@ -79,14 +79,29 @@ EDGE_BUDGET = 180
 # 电脑端的识海入口：统一指向正在跑的 8767，不再新开 8765。
 SIHAI_WEB = "http://127.0.0.1:8767/sihai.html"
 
-# 桌面端为主入口：五个和网页版同名的独立视图。
+# 桌面端为主入口：八个和网页版同名的独立视图。
 VIEWS = [
     ("thought", "她在想什么"),
     ("dispatch", "调度"),
     ("learning", "学习"),
+    ("feedback", "分寸"),
+    ("meaning", "意义"),
+    ("persona", "人格"),
     ("echo", "残响"),
     ("diary", "日记"),
 ]
+
+# 与 8767 抽屉的 dKick / dTitle 同一套文案；dock 用短名，抽屉用完整名。
+VIEW_TITLES = {
+    "thought": ("INSIGHT", "她在想什么"),
+    "dispatch": ("DISPATCH", "调度"),
+    "learning": ("LEARNING", "学习"),
+    "feedback": ("FEEDBACK", "分寸反馈"),
+    "meaning": ("MEANING", "意义与章节"),
+    "persona": ("PERSONA", "人格版本"),
+    "echo": ("ECHO", "残响"),
+    "diary": ("DIARY", "日记"),
+}
 
 
 def _dpi_aware() -> None:
@@ -198,7 +213,10 @@ class ScrollPanel(tk.Frame):
         self.inner.bind("<Configure>", self._on_inner)
         self.canvas.bind("<Enter>", lambda _e: self.canvas.bind_all(
             "<MouseWheel>", self._on_wheel))
+        self.inner.bind("<Enter>", lambda _e: self.canvas.bind_all(
+            "<MouseWheel>", self._on_wheel))
         self.canvas.bind("<Leave>", lambda _e: self.canvas.unbind_all("<MouseWheel>"))
+        self.inner.bind("<Leave>", lambda _e: self.canvas.unbind_all("<MouseWheel>"))
 
     def _on_canvas(self, event: tk.Event) -> None:
         self.canvas.itemconfigure(self._win, width=max(1, event.width))
@@ -486,22 +504,22 @@ class DesktopApp:
         self.root.protocol("WM_DELETE_WINDOW", self._on_close)
 
     def _setup_fonts(self) -> None:
-        # 网页的字号是 CSS px：brand 17、正文 12、mono 10。Tk 用 pt，
-        # 这里按 96dpi 取近似值，别让桌面版比网页胖一圈。
-        self.f_brand = tkfont.Font(family=FONT, size=16, weight="bold")
+        # 网页 CSS px 是按 96dpi 写的；Tk 用 pt，取 px*0.75 左右，
+        # 这样 1380 宽的桌面版不会被字撑得比浏览器胖一圈。
+        self.f_brand = tkfont.Font(family=FONT, size=13, weight="bold")
         self.f_sub = tkfont.Font(family=FONT, size=9)
         self.f_body = tkfont.Font(family=FONT, size=10)
-        self.f_head = tkfont.Font(family=SERIF, size=14, weight="bold")
-        self.f_title = tkfont.Font(family=SERIF, size=14, weight="bold")
+        self.f_head = tkfont.Font(family=FONT, size=13, weight="bold")
+        self.f_title = tkfont.Font(family=FONT, size=13, weight="bold")
         self.f_small = tkfont.Font(family=FONT, size=9)
-        self.f_tiny = tkfont.Font(family=MONO, size=8)
+        self.f_tiny = tkfont.Font(family=FONT, size=8)
         self.f_mono = tkfont.Font(family=MONO, size=8)
-        self.f_chat = tkfont.Font(family=SERIF, size=10)
+        self.f_chat = tkfont.Font(family=FONT, size=10)
         self.f_chat_user = tkfont.Font(family=FONT, size=9)
         self.f_chat_small = tkfont.Font(family=FONT, size=8)
-        self.f_panel = tkfont.Font(family=MONO, size=8)
-        self.f_val = tkfont.Font(family=FONT, size=9)
-        self.f_hot = tkfont.Font(family=SERIF, size=10)
+        self.f_panel = tkfont.Font(family=FONT, size=8)
+        self.f_val = tkfont.Font(family=FONT, size=8)
+        self.f_hot = tkfont.Font(family=FONT, size=9, weight="bold")
 
     def _setup_icon(self) -> None:
         """给窗口换掉 Tk 默认的羽毛图标：一颗带环的蓝星。"""
@@ -526,8 +544,9 @@ class DesktopApp:
 
         self.ui_top = tk.Frame(self.root, bg=BG)
         self.ui_top.place(x=0, y=0, relwidth=1.0, height=58)
-        # 8767 的 topbar 没有大标题和图标：左边是拉开字距的「识 海」，
-        # 右边是来历 / 人和物 / 连接，最右一枚数据徽章。
+        # 8767 的 topbar：左边拉开字距的「识 海」+ 一句副题，
+        # 右边是来历 / 人和物 / 连接，最右一枚数据徽章。桌面版不再放
+        # 「网页版」「数据」两个按钮——那会把 topbar 撑成另一套东西。
         self.brand = tk.Label(self.ui_top, text="识  海", bg=BG, fg="#eaf1ff",
                               font=self.f_brand)
         self.brand.pack(side="left", padx=(22, 14))
@@ -535,46 +554,56 @@ class DesktopApp:
                             bg=BG, fg=DIM, font=self.f_sub)
         self.sub.pack(side="left")
         self.stats = tk.Label(self.ui_top, text="", bg=BG, fg="#9fb0c9",
-                              font=self.f_mono)
+                              font=self.f_small)
         self.stats.pack(side="right", padx=(0, 12))
         self.badge = tk.Label(self.ui_top, text="示例数据", bg="#2a1810", fg=AMBER,
-                              font=self.f_mono, padx=8, pady=2,
+                              font=self.f_tiny, padx=9, pady=3,
                               bd=0, relief="flat",
                               highlightbackground="#6a3d2a",
-                              highlightthickness=1)
-        self.badge.pack(side="right", padx=(0, 10))
-        self.web_btn = tk.Button(
-            self.ui_top, text="网页版", command=self._open_sihai_web,
-            bg=BG, fg=SUB, activebackground=PANEL_BG, activeforeground=INK,
-            bd=0, relief="flat", font=self.f_mono, padx=8, pady=3,
-            cursor="hand2")
-        self.web_btn.pack(side="right", padx=(0, 6))
-        self.menu_btn = tk.Menubutton(self.ui_top, text="数据", bg=BG,
-                                      fg=DIM, activebackground=PANEL_BG,
-                                      activeforeground=INK, bd=0, relief="flat",
-                                      font=self.f_mono, padx=8, pady=3)
-        menu = tk.Menu(self.menu_btn, tearoff=False, bg=PANEL_BG, fg=INK,
-                       activebackground=LINE_2, activeforeground=INK,
-                       font=self.f_mono)
-        menu.add_command(label="真实数据", command=lambda: self._reload(False))
-        menu.add_command(label="示例数据", command=lambda: self._reload(True))
-        menu.add_separator()
-        menu.add_command(label="打开识海网页（8767）", command=self._open_sihai_web)
-        menu.add_command(label="刷新（F5）", command=lambda: self._reload(self.demo))
-        self.menu_btn.configure(menu=menu)
-        self.menu_btn.pack(side="right", padx=(0, 8))
-        # 网页 topbar 是渐隐到透明，Tk 用一条 1px 底线代替。
-        self.top_line = tk.Frame(self.root, bg=LINE)
-        self.top_line.place(x=0, y=58, relwidth=1.0, height=1)
+                              highlightthickness=1, cursor="hand2")
+        self.badge.pack(side="right", padx=(0, 22))
+        # 数据切换仍然在，只是收进徽章：网页里没有第二个按钮，
+        # 桌面版就不在 topbar 上再造一个。
+        self._data_menu = tk.Menu(self.root, tearoff=False, bg=PANEL_BG, fg=INK,
+                                  activebackground=LINE_2, activeforeground=INK,
+                                  font=self.f_mono)
+        self._data_menu.add_command(label="真实数据", command=lambda: self._reload(False))
+        self._data_menu.add_command(label="示例数据", command=lambda: self._reload(True))
+        self._data_menu.add_separator()
+        self._data_menu.add_command(label="打开识海网页（8767）", command=self._open_sihai_web)
+        self._data_menu.add_command(label="刷新（F5）", command=lambda: self._reload(self.demo))
+        self.badge.bind("<Button-1>", self._show_data_menu)
+        self.badge.bind("<Button-3>", self._show_data_menu)
         # 兼容旧引用：不显示，只让状态更新不报错。
         self.status_dot = tk.Label(self.ui_top, text="", bg=BG, fg=SEA,
                                    font=tkfont.Font(family=FONT, size=1))
 
+        self.label_all = tk.BooleanVar(value=False)
+        # 兼容旧自检/旧代码的引用；真正可见的开关在顶部胶囊里。
+        self.label_chk = tk.Checkbutton(self.root, text="标签",
+                                        variable=self.label_all)
+
         self.ui_views = self._build_views()
-        self.hint = tk.Label(self.root, text="", bg=BG, fg=DIM,
-                             font=self.f_small, justify="left")
-        self.zoom = tk.Label(self.root, text="", bg=BG, fg=DIM,
-                             font=self.f_mono)
+        self.hint = tk.Label(self.root, text="", bg=BG, fg="#55637a",
+                             font=self.f_small, justify="left", width=28,
+                             anchor="nw")
+        self.zoom = tk.Label(self.root, text="", bg=BG, fg="#465366",
+                             font=self.f_small)
+        # 网页中间那条「她此刻」：底部 108px，点击打开「她在想什么」。
+        self.thoughtline = tk.Frame(self.root, bg="#08111c", bd=0,
+                                    highlightbackground="#2a3a52",
+                                    highlightthickness=1, cursor="hand2")
+        self.thought_tick = tk.Label(
+            self.thoughtline, text="她此刻", bg="#08111c", fg="#7fd8ff",
+            font=self.f_tiny)
+        self.thought_tick.pack(side="left", padx=(13, 7), pady=8)
+        self.thought_text = tk.Label(
+            self.thoughtline, text="还没接上她的思绪", bg="#08111c",
+            fg="#b9cbdf", font=self.f_small, anchor="w")
+        self.thought_text.pack(side="left", fill="x", expand=True,
+                               padx=(0, 13), pady=8)
+        for w in (self.thoughtline, self.thought_tick, self.thought_text):
+            w.bind("<Button-1>", lambda _e: self._open_view("thought"))
 
         self.ui_panel = self._build_panel()
         self.ui_card = self._build_card()
@@ -592,7 +621,7 @@ class DesktopApp:
         self.root.bind("<Configure>", self._on_root_configure)
 
     def _build_views(self) -> tk.Frame:
-        """8767 的悬浮胶囊导航：视图在最上，聊天是一个开关，不再是常驻窗口。"""
+        """8767 顶部居中的胶囊导航：八块视图 + 标签 + 刷新，不再放「说话」。"""
         bar = tk.Frame(self.root, bg="#070b14", bd=0,
                        highlightbackground="#222f42", highlightthickness=1,
                        padx=5, pady=4)
@@ -601,19 +630,26 @@ class DesktopApp:
                 bar, text=label, command=lambda k=key: self._open_view(k),
                 bg="#070b14", fg="#8fa0b7", activebackground="#16263a",
                 activeforeground="#f3f7ff", bd=0, relief="flat",
-                font=self.f_small, padx=10, pady=5, cursor="hand2",
+                font=self.f_small, padx=9, pady=5, cursor="hand2",
                 highlightthickness=1, highlightbackground="#070b14")
-            b.pack(side="left", padx=2)
+            b.pack(side="left", padx=1)
             self.view_btns[key] = b
         sep = tk.Frame(bar, bg="#222f42", width=1, height=18)
         sep.pack(side="left", padx=5)
-        self.chat_btn = tk.Button(
-            bar, text="说话", command=self._toggle_chat,
-            bg="#070b14", fg="#8fa0b7", activebackground="#16263a",
-            activeforeground="#f3f7ff", bd=0, relief="flat",
-            font=self.f_small, padx=10, pady=5, cursor="hand2",
+        self.label_btn = tk.Button(
+            bar, text="标签", command=self._toggle_labels,
+            bg="#070b14", fg="#6f8299", activebackground="#16263a",
+            activeforeground="#dce8f8", bd=0, relief="flat",
+            font=self.f_small, padx=8, pady=5, cursor="hand2",
             highlightthickness=1, highlightbackground="#070b14")
-        self.chat_btn.pack(side="left", padx=2)
+        self.label_btn.pack(side="left", padx=1)
+        self.refresh_btn = tk.Button(
+            bar, text="↻", command=lambda: self._reload(self.demo),
+            bg="#070b14", fg="#6f8299", activebackground="#16263a",
+            activeforeground="#dce8f8", bd=0, relief="flat",
+            font=self.f_small, padx=7, pady=5, cursor="hand2",
+            highlightthickness=1, highlightbackground="#070b14")
+        self.refresh_btn.pack(side="left", padx=1)
         return bar
 
     def _build_insight(self) -> tk.Frame:
@@ -643,18 +679,23 @@ class DesktopApp:
                                  bd=0, wrap="word", padx=4, pady=4,
                                  font=self.f_body, cursor="arrow",
                                  selectbackground="#21344f")
-        scroll = tk.Scrollbar(box, orient="vertical", width=7,
+        scroll = tk.Scrollbar(box, orient="vertical", width=5,
                               command=self.view_text.yview,
                               bg=CARD_BG, troughcolor=CARD_BG,
                               activebackground="#2a3a55", bd=0,
                               highlightthickness=0)
         self.view_text.configure(yscrollcommand=scroll.set)
-        scroll.pack(side="right", fill="y")
+        # 网页抽屉只有一条 5px 的暗色滚动条；Windows 原生 Scrollbar
+        # 会画成一条亮灰轨道，反而比网页更抢眼。内容仍可用滚轮滚。
+        scroll.pack_forget()
         self.view_text.pack(side="left", fill="both", expand=True)
         self.view_text.configure(state="disabled")
         self.view_text.tag_configure("h", foreground=INK,
                                      font=self.f_head,
                                      spacing1=10, spacing3=5)
+        self.view_text.tag_configure("h3", foreground="#7488a2",
+                                     font=self.f_tiny,
+                                     spacing1=9, spacing3=4)
         self.view_text.tag_configure("dim", foreground=DIM)
         self.view_text.tag_configure("warm", foreground=AMBER)
         self.view_text.tag_configure("link", foreground=SEA, underline=True)
@@ -678,14 +719,17 @@ class DesktopApp:
                          highlightthickness=1)
         self.panel_scroll = ScrollPanel(outer, PANEL_BG)
         self.panel_scroll.pack(fill="both", expand=True)
-        p = tk.Frame(self.panel_scroll.inner, bg=PANEL_BG, padx=16, pady=14)
+        # 网页的 .panel 隐藏滚动条，滚轮照常能滚；桌面版也不该在左栏
+        # 常驻一条亮灰色滚动条，那会破坏整块面板的暗色。
+        self.panel_scroll.scroll.pack_forget()
+        p = tk.Frame(self.panel_scroll.inner, bg=PANEL_BG, padx=16, pady=12)
         p.pack(fill="both", expand=True)
         self.pv: dict[str, tk.Label] = {}
         self.pb: dict[str, tuple[tk.Canvas, int]] = {}
         self.bar_widths = {}
 
         head = tk.Frame(p, bg=PANEL_BG)
-        head.pack(fill="x", pady=(0, 9))
+        head.pack(fill="x", pady=(0, 8))
         left = tk.Frame(head, bg=PANEL_BG)
         left.pack(side="left", fill="x", expand=True)
         tk.Label(left, text="她  此  刻", bg=PANEL_BG, fg="#7f8fa8",
@@ -702,11 +746,12 @@ class DesktopApp:
         tk.Label(head, text="⌁", bg=PANEL_BG, fg="#4e6684",
                  font=tkfont.Font(family=FONT, size=17)).pack(side="right",
                                                                anchor="n")
+        tk.Frame(p, bg=LINE, height=1).pack(fill="x", pady=(0, 9))
 
         def row(key: str, label: str, wrap: bool = False,
                 parent: Optional[tk.Misc] = None) -> None:
             f = tk.Frame(parent or p, bg=PANEL_BG)
-            f.pack(fill="x", pady=(3, 0))
+            f.pack(fill="x", pady=(2, 0))
             tk.Label(f, text=label, bg=PANEL_BG, fg="#8798ae",
                      font=self.f_tiny).pack(side="left")
             v = tk.Label(f, text="—", bg=PANEL_BG, fg="#dce7f5",
@@ -724,14 +769,14 @@ class DesktopApp:
                 parent: Optional[tk.Misc] = None) -> None:
             c = tk.Canvas(parent or p, height=3, bg="#1a2638",
                           highlightthickness=0, bd=0, width=width)
-            c.pack(fill="x", pady=(2, 4))
+            c.pack(fill="x", pady=(2, 3))
             fill = c.create_rectangle(0, 0, 0, 3, fill=color, outline="")
             self.pb[key] = (c, fill)
             self.bar_widths[key] = width
 
         def rule(text: str) -> None:
             f = tk.Frame(p, bg=PANEL_BG)
-            f.pack(fill="x", pady=(9, 6))
+            f.pack(fill="x", pady=(7, 5))
             tk.Label(f, text=text, bg=PANEL_BG, fg="#5f738c",
                      font=self.f_tiny).pack(side="left")
             tk.Frame(f, height=1, bg=LINE).pack(side="left", fill="x",
@@ -788,6 +833,7 @@ class DesktopApp:
         row("desire", "六欲", wrap=True, parent=self.more_frame)
         row("echo", "残响", wrap=True, parent=self.more_frame)
         row("expr", "表达", wrap=True, parent=self.more_frame)
+        row("feedback", "分寸", wrap=True, parent=self.more_frame)
 
         self.lock_line = tk.Label(
             p, text="成长：冻结\n学习照常跑，但只进「待审核」区，不写进记忆。",
@@ -824,7 +870,8 @@ class DesktopApp:
         for key, label in [
             ("time", "时间"), ("emo", "情绪"), ("ret", "细节留存"),
             ("mean", "意义"), ("res", "情绪残留"), ("echo", "痕迹"),
-            ("imp", "重要程度"), ("used", "被想起过"), ("deg", "连着的线"),
+            ("imp", "重要程度"), ("used", "被想起过"), ("str", "强化强度"),
+            ("deg", "连着的线"),
         ]:
             f = tk.Frame(c, bg=CARD_BG)
             f.pack(fill="x", pady=1)
@@ -907,12 +954,6 @@ class DesktopApp:
         self.scale.pack(side="left", fill="x", expand=True, padx=9)
         tk.Label(tl, text="现在", bg=BG, fg=DIM,
                  font=self.f_tiny).pack(side="left")
-        self.label_all = tk.BooleanVar(value=False)
-        self.label_chk = tk.Checkbutton(
-            tl, text="标签", variable=self.label_all, bg=BG, fg=DIM,
-            activebackground=BG, activeforeground=INK, selectcolor=BG_2,
-            font=self.f_mono, bd=0, highlightthickness=0)
-        self.label_chk.pack(side="right", padx=(8, 0))
         self.legend = tk.Frame(f, bg=BG)
         self.legend.pack(fill="x", pady=(7, 0))
         return f
@@ -920,35 +961,37 @@ class DesktopApp:
     def _place_overlays(self) -> None:
         w = max(1, self.root.winfo_width())
         h = max(1, self.root.winfo_height())
-        # 8767 的 .dock 是屏幕顶部居中的悬浮胶囊，不再靠左排方块。
+        # 8767 的 .dock 是屏幕顶部居中的悬浮胶囊。
         self.ui_views.place_forget()
         self.ui_views.place(relx=0.5, y=64, anchor="n")
-        panel_h = max(220, h - 122 - (26 if self.birth else 110))
+        panel_h = max(260, h - 190)
         if self.birth:
             self.ui_panel.place_forget()
-            self.ui_panel.place(x=w - 22 - 272, y=122, width=272,
+            self.ui_panel.place(x=w - 22 - 272, y=74, width=272,
                                 height=panel_h)
             self.panel_scroll.canvas.configure(height=panel_h)
-            self.hint.place(x=22, y=h - 36, anchor="sw")
+            self.panel_scroll.canvas.itemconfigure(self.panel_scroll._win,
+                                                    height=max(1, panel_h - 4))
+            self.hint.place(relx=1.0, x=-22, y=h - 16, anchor="se")
             self.ui_footer.place_forget()
-            self.ui_chat.place(relx=0.5, y=h - 18, anchor="s",
-                               width=620, height=230)
+            self.ui_chat.place(relx=0.5, y=h - 16, anchor="s",
+                               width=min(620, w - 44), height=230)
             self.ui_chat.lift()
+            self.thoughtline.place_forget()
         else:
             self.ui_panel.place_forget()
             self.ui_panel.place(x=22, y=122, width=272, height=panel_h)
             self.panel_scroll.canvas.configure(height=panel_h)
-            self.hint.place(x=22, y=102)
-            if self.chat_open:
-                self.ui_footer.place_forget()
-                self.ui_chat.place(relx=0.5, y=h - 18, anchor="s",
-                                   width=620, height=230)
-                self.ui_chat.lift()
-            else:
-                self.ui_chat.place_forget()
-                self.ui_footer.place(x=22, y=h - 16, anchor="sw",
-                                     width=max(320, w - 44))
-                self.ui_footer.lift()
+            self.panel_scroll.canvas.itemconfigure(self.panel_scroll._win,
+                                                    height=max(1, panel_h - 4))
+            self.hint.place(x=22, y=74)
+            self.ui_chat.place_forget()
+            self.ui_footer.place(x=0, y=0, relwidth=1.0,
+                                 height=210, rely=1.0, anchor="sw")
+            self.ui_footer.lift()
+            self.thoughtline.place(relx=0.5, y=h - 108, anchor="s",
+                                   width=min(760, int(w * 0.72)), height=34)
+            self.thoughtline.lift()
             self.ui_panel.lift()
         if self.view_kind:
             self.ui_chat.place_forget()
@@ -960,7 +1003,7 @@ class DesktopApp:
             self.ui_insight.place_forget()
             if self.picked:
                 self.ui_card.place(relx=1.0, x=-20, y=72, anchor="ne", width=340)
-        self.zoom.place(x=w - 22, y=h - 26, anchor="e")
+        self.zoom.place(x=22, y=h - 26, anchor="w")
 
     # ---- 五块独立视图 -----------------------------------------------------
     def _ensure_chat(self):
@@ -977,12 +1020,25 @@ class DesktopApp:
                 bg="#12243a" if on else "#070b14",
                 fg="#f3f7ff" if on else "#8fa0b7",
                 highlightbackground="#2a4a6a" if on else "#070b14")
-        if hasattr(self, "chat_btn"):
-            on = bool(self.chat_open)
-            self.chat_btn.configure(
+        if hasattr(self, "label_btn"):
+            on = bool(self.label_all.get())
+            self.label_btn.configure(
                 bg="#12243a" if on else "#070b14",
-                fg="#f3f7ff" if on else "#8fa0b7",
+                fg="#f3f7ff" if on else "#6f8299",
                 highlightbackground="#2a4a6a" if on else "#070b14")
+
+    def _toggle_labels(self) -> None:
+        self.label_all.set(not bool(self.label_all.get()))
+        self._style_dock()
+        self._label_visible.clear()
+        self._mark_dirty(0.02)
+
+    def _show_data_menu(self, event: tk.Event) -> str:
+        try:
+            self._data_menu.tk_popup(event.x_root, event.y_root)
+        finally:
+            self._data_menu.grab_release()
+        return "break"
 
     def _open_view(self, kind: str) -> None:
         if kind == self.view_kind:
@@ -992,7 +1048,9 @@ class DesktopApp:
         self.view_loading = False
         self.chat_open = False
         self._style_dock()
-        self.view_title.configure(text=dict(VIEWS).get(kind, kind))
+        kick, title = VIEW_TITLES.get(kind, ("INSIGHT", dict(VIEWS).get(kind, kind)))
+        self.view_kicker.configure(text=kick)
+        self.view_title.configure(text=title)
         self._set_view_text("", "读取中…")
         self._place_overlays()
         self._refresh_view()
@@ -1050,6 +1108,32 @@ class DesktopApp:
                     chat = self._ensure_chat()
                     with self._chat_lock:
                         payload = chat.panel_payload()
+                        # 网页 /api/insight 的另外三块；桌面端不经过 HTTP，
+                        # 直接读同一套只读 Memory 方法。
+                        payload["state"] = chat.mind.snapshot()
+                        try:
+                            payload["feedback"] = chat.mem.pre_answer_feedback_history(limit=20)
+                        except Exception:
+                            payload["feedback"] = {}
+                        try:
+                            payload["meaning"] = {
+                                "ok": True,
+                                "items": chat.mem.meaning_candidates(limit=30),
+                                "chapters": chat.mem.chapters(limit=30),
+                                "sources": chat.mem.recent_episodes(30),
+                            }
+                        except Exception as e:
+                            payload["meaning"] = {"ok": False, "items": [],
+                                                  "chapters": [], "sources": [],
+                                                  "error": f"{type(e).__name__}: {e}"}
+                        try:
+                            payload["persona"] = chat.mem.persona_payload(
+                                chat.persona.block("core"))
+                        except Exception as e:
+                            payload["persona"] = {"ok": False, "layers": {},
+                                                  "active_count": 0,
+                                                  "candidate_count": 0,
+                                                  "error": f"{type(e).__name__}: {e}"}
                     from .diary import Diary
                     payload["diary"] = Diary().summary(limit=6)
             except Exception as e:
@@ -1075,20 +1159,25 @@ class DesktopApp:
         def put(text: str, tag: str = "") -> None:
             self.view_text.insert("end", text, tag or ())
 
+        # 网页每 10 秒刷新一次 insight；底部那条「她此刻」也同步。
+        tline = (payload.get("thought") or {}).get("line")
+        if tline and hasattr(self, "thought_text"):
+            self.thought_text.configure(text=str(tline))
+
         if kind == "thought":
             t = payload.get("thought") or {}
-            put("此刻\n", "h")
+            put("此刻\n", "h3")
             put(str(t.get("line") or "她还没有留下可读的念头。") + "\n\n")
             if t.get("idle"):
                 put("这是静息态：没有为了看一眼而强行跑一轮召回。\n\n", "dim")
             tr = t.get("trace") or []
             if tr:
-                put("她这一轮怎么想的\n", "h")
+                put("她这一轮怎么想的\n", "h3")
                 for line in tr:
                     put(str(line) + "\n")
                 put("\n")
             if t.get("awareness"):
-                put("意识里亮着的\n", "h")
+                put("意识里亮着的\n", "h3")
                 put(str(t.get("awareness")) + "\n")
             self.view_action.configure(text="刷新", state="normal")
             self.view_hint.configure(text="不是模型的隐藏思维，是 think() 已经算出来的那一轮。")
@@ -1096,25 +1185,25 @@ class DesktopApp:
         elif kind == "dispatch":
             d = payload.get("dispatch") or {}
             last = d.get("last") or {}
-            put("这一次她先想起谁\n", "h")
+            put("这一次她先想起谁\n", "h3")
             if last:
                 put(" → ".join(str(x) for x in (last.get("chain") or [])) + "\n\n")
                 put(f"候选 {last.get('candidates', 0)} 个 · 唤醒 {last.get('awakened', 0)} 条 · "
                     f"扩散 {last.get('spread', 0)} 条 · θ={last.get('theta', 0)}\n\n", "dim")
                 aware = last.get("aware") or []
                 if aware:
-                    put("被照见\n", "h")
+                    put("被照见\n", "h3")
                     for x in aware:
                         put(f"· {x.get('label')}  A={x.get('A')}  [{x.get('kind')}]\n")
                     put("\n")
                 sub = last.get("subliminal") or []
                 if sub:
-                    put("只是存在、还没进意识\n", "h")
+                    put("只是存在、还没进意识\n", "h3")
                     for x in sub:
                         put(f"· {x.get('label')}  A={x.get('A')}\n")
                     put("\n")
                 if last.get("awareness_extra"):
-                    put("会写进提示的\n", "h")
+                    put("会写进提示的\n", "h3")
                     put(str(last["awareness_extra"]) + "\n")
             else:
                 put("还没有调度记录。\n\n", "dim")
@@ -1124,19 +1213,19 @@ class DesktopApp:
             self.view_hint.configure(text="点一颗星，图上会顺着它亮起相连的线。")
         elif kind == "learning":
             l = payload.get("learning") or {}
-            put("她最近在学什么\n", "h")
+            put("她最近在学什么\n", "h3")
             put(f"待审 {l.get('pending', 0)} 条 · 已审 {l.get('approved', 0)} 条 · "
                 f"好奇 {l.get('curiosities', 0)} 件 · 自习 {l.get('studies', 0)} 次\n\n", "dim")
             last = l.get("last_study") or {}
             if last:
-                put("上一次自习\n", "h")
+                put("上一次自习\n", "h3")
                 put(f"{last.get('day') or ''} {last.get('status') or ''} · "
                     f"加了 {last.get('added', 0)} 条待审\n")
                 if last.get("question"):
                     put("在琢磨：" + str(last["question"]) + "\n", "warm")
                 put("\n")
             pending = payload.get("pending") or []
-            put("待审材料\n", "h")
+            put("待审材料\n", "h3")
             if pending:
                 for x in pending:
                     cur = x.get("curiosity_q") or x.get("for_curiosity") or ""
@@ -1148,16 +1237,108 @@ class DesktopApp:
             self.view_status.configure(text="学习只进待审区，不直接写进记忆")
             self.view_action.configure(text="刷新", state="normal")
             self.view_hint.configure(text="桌面端与网页端读同一份学习库。")
+        elif kind == "feedback":
+            f = payload.get("feedback") or {}
+            items = f.get("items") or []
+            st = f.get("stats") or {}
+            put("分寸反馈\n", "h3")
+            put("上一轮回答前的分寸：你下一句是接住、纠正、拒绝，还是没回应。\n\n", "dim")
+            put(f"接住 {st.get('accepted', 0)} · 纠正 {st.get('corrected', 0)} · "
+                f"拒绝 {st.get('rejected', 0)} · 没回应 {st.get('no_response', 0)}\n\n",
+                "dim")
+            if not items:
+                put("还没有回答前的分寸记录。跟她说一句带情绪的话，下一次她会先判断怎么接；你回一句，反馈才会结算。\n", "dim")
+            self._feedback_line = (
+                f"接住 {st.get('accepted', 0)} · 纠正 {st.get('corrected', 0)} · "
+                f"拒绝 {st.get('rejected', 0)} · 没回应 {st.get('no_response', 0)}")
+            self.pv["feedback"].configure(text=self._feedback_line)
+            for x in items[:14]:
+                action = str(x.get("action_label") or x.get("action") or "")
+                strategy = str(x.get("strategy_label") or x.get("strategy") or "")
+                put(f"· {strategy} → {action}\n")
+                reason = str(x.get("reason") or "")
+                if reason:
+                    put("  " + reason + "\n", "dim")
+                src = str(x.get("source_text") or "")
+                if src:
+                    put("  你下一句：" + src[:60] + "\n", "link")
+                put("\n")
+            self.view_status.configure(text="只改下一次表达，不改记忆、关系或人格")
+            self.view_action.configure(text="刷新", state="normal")
+            self.view_hint.configure(text="误判可撤回；桌面端这一版先只读展示。")
+        elif kind == "meaning":
+            m = payload.get("meaning") or {}
+            items = m.get("items") or []
+            chapters = m.get("chapters") or []
+            sources = m.get("sources") or []
+            put("意义与章节\n", "h3")
+            put("她试着理解这段共同经历，不是把它写成事实。\n\n", "dim")
+            put(f"理解候选 {len(items)} 条 · 共同章节 {len(chapters)} 段 · 可引用事件 {len(sources)} 条\n\n",
+                "dim")
+            if items:
+                put("她试着理解的\n", "h3")
+                for x in items[:10]:
+                    put(f"· {x.get('title') or '一条理解'}\n")
+                    claim = str(x.get("claim") or "")
+                    if claim:
+                        put("  " + claim[:100] + "\n", "dim")
+                    srcs = x.get("sources") or []
+                    if srcs:
+                        put("  依据：" + "；".join(str(s)[:30] for s in srcs[:3]) + "\n",
+                            "dim")
+                    put("\n")
+            else:
+                put("还没有意义候选。先去聊天，让她记住一段经历，再回来整理。\n", "dim")
+            if chapters:
+                put("共同章节\n", "h3")
+                for x in chapters[:8]:
+                    put(f"· {x.get('title') or '一段章节'}\n")
+                    mean = str(x.get("meaning") or "")
+                    if mean:
+                        put("  " + mean[:120] + "\n", "dim")
+                    put("\n")
+            self.view_status.configure(text="候选要你确认；否定后不再参与叙事")
+            self.view_action.configure(text="刷新", state="normal")
+            self.view_hint.configure(text="意义和章节都是派生层：引用事件，不覆盖事件。")
+        elif kind == "persona":
+            p = payload.get("persona") or {}
+            put("人格版本\n", "h3")
+            put("身份与硬边界只读；稳定倾向、互动偏好、自我叙事都要有真实已确认的证据。\n\n",
+                "dim")
+            core = p.get("core") or {}
+            put("身份与硬边界（只读）\n", "h3")
+            put(str(core.get("text") or "（PERSONA.md 里没有 core 块）")[:500] + "\n\n",
+                "dim")
+            layers = p.get("layers") or {}
+            names = {"stable": "稳定倾向", "preference": "互动偏好",
+                     "narrative": "自我叙事"}
+            for key in ("stable", "preference", "narrative"):
+                layer = layers.get(key) or {}
+                put(names.get(key, key) + "\n", "h3")
+                active = layer.get("active")
+                if active:
+                    put(f"· 当前：{active.get('field')} = {active.get('value')}\n")
+                cands = layer.get("candidates") or []
+                for x in cands[:5]:
+                    put(f"· 候选：{x.get('field')} = {x.get('value')}\n", "warm")
+                if not active and not cands:
+                    put("· 还没有版本。\n", "dim")
+                put("\n")
+            put(f"生效 {p.get('active_count', 0)} 条 · 候选 {p.get('candidate_count', 0)} 条\n",
+                "dim")
+            self.view_status.configure(text="候选不自动生效；回滚只是新建一个指向旧版本的版本")
+            self.view_action.configure(text="刷新", state="normal")
+            self.view_hint.configure(text="人格版本是证据长出来的，不是模型自己改的。")
         elif kind == "echo":
             a = payload.get("echo") or {}
-            put("忘掉的是事，留下的是这层感觉\n", "h")
+            put("忘掉的是事，留下的是这层感觉\n", "h3")
             if a.get("text"):
                 put(str(a["text"]) + "\n\n", "warm")
             put(f"强度 {float(a.get('intensity') or 0):.2f} · 来源 {a.get('sources', 0)} 处 · "
                 f"说不清 {a.get('unknown', 0)} 处\n\n", "dim")
             imps = a.get("imprints") or []
             if imps:
-                put("留下的痕迹\n", "h")
+                put("留下的痕迹\n", "h3")
                 for im in imps:
                     if isinstance(im, dict):
                         put(f"· {im.get('text')}  {float(im.get('strength') or 0):.2f}\n")
@@ -1166,7 +1347,7 @@ class DesktopApp:
                 put("\n")
             feel = a.get("feel_text")
             if feel:
-                put("情绪场\n", "h")
+                put("情绪场\n", "h3")
                 put(str(feel) + "\n")
             ambient_n = sum(1 for n in self.nodes if n.get("is_ambient"))
             echo_n = sum(1 for n in self.nodes if n.get("is_echo"))
@@ -1177,7 +1358,7 @@ class DesktopApp:
             self.view_hint.configure(text="只看残响时，其余星会压暗；点星仍可读详情。")
         elif kind == "diary":
             d = payload.get("diary") or {}
-            put("她的日记\n", "h")
+            put("她的日记\n", "h3")
             put(f"每天 {d.get('write_at', '23:00')} 写 · 文件夹 {d.get('folder', 'robot/diary')}\n\n", "dim")
             cur = d.get("current") or {}
             if cur.get("ok"):
@@ -1188,7 +1369,7 @@ class DesktopApp:
                 put("点下面的按钮可以让她现在写；23:00 会自动写。\n\n")
             recent = d.get("recent") or []
             if recent:
-                put("最近几页\n", "h")
+                put("最近几页\n", "h3")
                 for r in recent[:8]:
                     put(f"· {r.get('day')}  {r.get('chars', 0)} 字  {r.get('source', '')}\n")
             self.view_status.configure(text="日记独立于识海，不参与召回权重")
@@ -2020,7 +2201,8 @@ class DesktopApp:
         for w in (getattr(self, "ui_top", None), getattr(self, "ui_panel", None),
                   getattr(self, "ui_chat", None), getattr(self, "ui_card", None),
                   getattr(self, "ui_footer", None), getattr(self, "ui_views", None),
-                  getattr(self, "ui_insight", None)):
+                  getattr(self, "ui_insight", None),
+                  getattr(self, "thoughtline", None)):
             if w is None:
                 continue
             try:
@@ -2038,7 +2220,7 @@ class DesktopApp:
         # 默认只标重点：整片海每颗星都挂一行，字会互相压成一张网。
         # 勾「全部标签」回到旧行为；悬停/点选/高重要度的星始终有标签。
         show_all = bool(self.label_all.get()) if hasattr(self, "label_all") else False
-        limit = 48 if show_all else 16
+        limit = 48 if show_all else 9
         occluders = self._ui_occluders()
         cands: list[tuple[float, dict, dict, float, float, float, bool]] = []
         for n in self.nodes:
@@ -2091,6 +2273,8 @@ class DesktopApp:
                                       fill="#edf4ff" if hot else "#b7c7dc",
                                       font=f)
             self.canvas.coords(rec["ltxt"], sx, ly)
+            self.canvas.tag_raise(rec["lbg"])
+            self.canvas.tag_raise(rec["ltxt"])
             visible.add(str(n.get("id")))
             shown += 1
         # 只隐藏上一帧真实显示过、这一帧被挤掉的标签；不要每帧遍历全部节点。
@@ -2532,6 +2716,9 @@ class DesktopApp:
         self.card_rows["imp"].configure(text=f"{round(clamp(float(n.get('imp') or 0), 0, 1) * 100)}%")
         self.card_rows["used"].configure(text=f"{int(n.get('used') or 0)} 次")
         self.card_rows["deg"].configure(text=f"{int(n.get('deg') or 0)} 条")
+        strength = n.get("str", n.get("strength"))
+        self.card_rows["str"].configure(
+            text=(f"{round(float(strength) * 100)}%" if strength is not None else "—"))
         body = str(n.get("text") or "")
         if n.get("scene"):
             body += f"\n场景：{n.get('scene')}"
@@ -2568,7 +2755,16 @@ class DesktopApp:
             text=f"来历 {self.meta.get('n_episodes', len(self.nodes))} 段　"
                  f"人和物 {self.meta.get('n_people', 0)}　"
                  f"连接 {self.meta.get('n_edges', len(self.edges))}")
-        self.sub.configure(text="外层是新的经历，越往里越沉淀")
+        if self.birth:
+            self.sub.configure(text="识海里只有她自己一颗星：还没有一段记忆落下来")
+        else:
+            self.sub.configure(text="外层是新的经历，越往里越沉淀")
+        if self.meta.get("source") == "demo":
+            self.badge.configure(text="示例数据", bg="#2a1810", fg=AMBER,
+                                 highlightbackground="#6a3d2a")
+        else:
+            self.badge.configure(text="真实数据", bg="#0d241c", fg="#96e5bf",
+                                 highlightbackground="#2c6a51")
 
     def _update_panel(self, s: Optional[dict], learn: Optional[dict],
                       si: Optional[dict], mem: Optional[dict]) -> None:
@@ -2608,7 +2804,10 @@ class DesktopApp:
                     feel_line = f"{s.get('feel_text')}（{' · '.join(top.split(' · ')[:2])}）"
                 else:
                     feel_line = str(s.get("feel_text"))
-            feel_text = (feel + "　" + feel_line).strip("　") or "她此刻没什么特别的起伏。"
+            if feel_line and feel_line not in feel:
+                feel_text = (feel + "　" + feel_line).strip("　")
+            else:
+                feel_text = feel or feel_line
             # 桌面左栏只有 272px，长句会挤掉「学习」那一行；这里保留摘要，
             # 完整情绪仍在点开详情/她在想什么里，不在这里硬塞满。
             self.pv["feel"].configure(text=self._clip(feel_text, 72))
@@ -2632,6 +2831,8 @@ class DesktopApp:
                 self.meta.get("ambient") or {}))
             self.pv["expr"].configure(text=self._expr_text(
                 self.meta.get("expression") or {}))
+            self.pv["feedback"].configure(
+                text=getattr(self, "_feedback_line", "—"))
             if s.get("growth") and s.get("growth") != "frozen":
                 self.lock_line.configure(text="成长：已开启\n她可以开始把经历沉淀成习惯了。",
                                          fg=GREEN)
@@ -2876,7 +3077,12 @@ class DesktopApp:
         if not self.screenshot or self._closing:
             return
         # 不抢 topmost：抢了以后 DWM 合成会截出一张黑图。
-        # 需要干净截图时用 --geometry 把窗口挪开桌面宠物等悬浮层即可。
+        # 先把窗口抬到最前，否则截图坐标里会混进别的窗口。
+        try:
+            self.root.lift()
+            self.root.focus_force()
+        except Exception:
+            pass
         self.root.update_idletasks()
         self.root.update()
         self.root.after(650, self._grab_screen)

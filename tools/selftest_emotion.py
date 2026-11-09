@@ -297,21 +297,6 @@ def main() -> int:
           and "不想解释" in Persona().compose_birth("在吗", expression=wronged),
           "compose_birth")
 
-    print("— 情绪也改「说什么」—")
-    check("除平静外每种情绪都有内容规则",
-          all(A.content_of(n) for n in names if n != "平静"),
-          str([n for n in names if n != "平静" and not A.content_of(n)]))
-    check("委屈把内容也改了，不只改语气",
-          any("委屈" in c for c in wronged.get("content_rules") or []),
-          str(wronged.get("content_rules")))
-    check("这一轮的决策带上要说的内容",
-          bool(thf["decision"].get("content")),
-          str(thf["decision"]))
-    check("内容以独立一段进系统提示",
-          "【这一轮想说的】" in Persona().compose_birth(
-              "在吗", mind=mind, thought=thf),
-          "compose_birth")
-
     print("— 残响带颜色：忘了事，还记得是哪一种感觉 —")
     feel_mem = M.Memory(td / "feel_amb.db")
     feel_mem.add_episode("他很突然地离开了", who="他", imp=0.9,

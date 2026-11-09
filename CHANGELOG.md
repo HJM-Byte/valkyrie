@@ -7,7 +7,6 @@
 - 从公开仓库移除学校模块：删除 `app/school.py`、`school.cmd`、`tools/selftest_school.py` 及其配置、预算、对话回接、服务入口和验收引用；学习与成长链路保持不变。
 - 识海滚动渲染：滚动面板改为不透明底色，去掉 `backdrop-filter`，加入 `overscroll-behavior: contain` 与 `scrollbar-gutter: stable`；桌面滚动步长固定，只在内容尺寸变化时更新 `scrollregion`，修复滚动时星海透底造成的闪动。
 - 桌面识海原生复刻：不再使用 Edge 承载网页，`app/desktop.py` 直接按 `sihai.html` 重画顶栏、八块胶囊导航、左侧面板、详情抽屉、思考线、时间轴与卡片；新增 `分寸`、`意义`、`人格` 三块只读视图，数据与 `Chat.panel_payload()` / `Memory` 同源。
-- 情绪改「说什么」：新增 `affect.content_rules`，把最强的一两股情绪落成这一轮要说的事（如委屈要说出来、好奇要追问一个细节）；`think.decide` 先算情绪场再重跑决策，内容以 `decision.content` 和独立提示段 `【这一轮想说的】` 进系统提示。语气仍由 `emotion.plan` 的【怎么说】与 TTS 参数负责。
 
 ## v0.1.0 — 2026-11-08
 

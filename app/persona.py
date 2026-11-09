@@ -129,9 +129,6 @@ class Persona:
             dec = thought.get("decision") or {}
             if dec.get("rule"):
                 parts.append(f"【这一轮】\n{dec['rule']}")
-            if dec.get("content"):
-                parts.append("【这一轮想说的】\n" + "\n".join(
-                    f"- {c}" for c in dec["content"]))
             pre = thought.get("pre_answer") or {}
             if pre.get("applied") and pre.get("directive"):
                 parts.append(
@@ -248,9 +245,6 @@ class Persona:
         dec = (thought or {}).get("decision") or {}
         if dec.get("rule"):
             tail.append(f"【这一轮】\n{dec['rule']}")
-            if dec.get("content"):
-                tail.append("【这一轮想说的】\n" + "\n".join(
-                    f"- {c}" for c in dec["content"]))
         elif mode == "ack":
             tail.append("【这一轮】\n他这句话不值得展开。应一声就好，一句，不超过十二个字。")
         elif mode == "quiet":

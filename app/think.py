@@ -472,8 +472,7 @@ def confidence(memories: list, inference: float) -> float:
 
 
 def decide(p: dict, ap: dict, spot: dict, memories: list, state: dict,
-           recall_info: Optional[dict] = None,
-           feel: Optional[dict] = None) -> dict:
+           recall_info: Optional[dict] = None) -> dict:
     event = next(c for c in spot["candidates"] if c["id"] == "event")
     A = event["A"]
     infer = 1.0 if (p["question"] or p["ask_her"]) else 0.3
@@ -525,15 +524,9 @@ def decide(p: dict, ap: dict, spot: dict, memories: list, state: dict,
         else:
             rule = rule + (" 库里有记忆，但这一轮没有一条可靠记录对得上；"
                            "可以说想不起来，不能说这件事没发生过。")
-    # 情绪不是只改语气：她此刻最强的那一两股情绪，会决定这一轮把哪件事
-    # 真的说出口。ack/quiet/comfort 是很窄的接法，不往里塞内容，免得
-    # 一句「嗯」被撑成一段；其余策略都允许情绪改「说什么」。
-    content: list[str] = []
-    if feel and key in ("answer", "attend", "confess", "deflect"):
-        content = _affect.content_rules(feel, cap=2)
     return {
         "key": key, "name": name, "max_chars": max_chars, "rule": rule,
-        "score": A, "confidence": conf, "content": content,
+        "score": A, "confidence": conf,
     }
 
 
@@ -635,17 +628,10 @@ def think(text: str, mind=None, mem=None, now: Optional[float] = None,
     spot = compete(p, ap, state, rec["activation"], rec["hits"])
     own_ = own(p, rec["hits"])
     rel = relate(state)
-    # 先跑一遍不含情绪的决策，只为了给情绪场提供「这一轮准备怎么接」；
-    # 情绪场起来后，再用它重跑一次决策——这样情绪能改「说什么」，
-    # 而不是只等回答完再给语气补一层。
-    dec0 = decide(p, ap, spot, rec["hits"], state, rec)
-    feel0 = _affect.step(_affect.from_state(state), p, ap, state,
-                         rec["hits"], ambient, dec0)
-    dec = decide(p, ap, spot, rec["hits"], state, rec, feel=feel0)
+    dec = decide(p, ap, spot, rec["hits"], state, rec)
 
     # 情绪场：这一轮的评价落在她身上，成了哪几股情绪。
     # 不是「他说难受 → 她委屈」这种单标签映射，而是评价 + 旧事残留 + 身体一起算。
-    # 最后再用定下来的决策回算一次，确保 deflect/confess 对情绪的那点影响没丢。
     feel = _affect.step(_affect.from_state(state), p, ap, state,
                         rec["hits"], ambient, dec)
 
@@ -688,8 +674,6 @@ def think(text: str, mind=None, mem=None, now: Optional[float] = None,
         "awareness_text": _awareness_text(spot, ap, state, feel),
     }
     th["trace"] = _trace_lines(p, ap, spot, rec, own_, rel, dec, feel)
-    if dec.get("content"):
-        th["trace"].append("内容    " + "；".join(dec["content"]))
     if pre.get("applied"):
         th["trace"].append(f"回答前  {pre['strategy']}：{pre['note']}（只改表达）")
     if pre.get("feedback_informed"):
@@ -712,7 +696,6 @@ def think(text: str, mind=None, mem=None, now: Optional[float] = None,
         "pre_answer_feedback": pre.get("feedback_action") or "",
         "pre_answer_feedback_informed": bool(pre.get("feedback_informed")),
         "confidence": dec["confidence"], "max_chars": dec["max_chars"],
-        "content": list(dec.get("content") or []),
         "desire": {"top": de.get("top_label") or "",
                    "strength": de.get("strength") or 0.0,
                    "frustration": de.get("frustration") or 0.0,

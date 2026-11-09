@@ -1,15 +1,11 @@
-"""情感输出：把内部状态翻成「怎么说」「说什么」和「怎么发声」。
+"""情感输出：把内部状态翻成「怎么说」和「怎么发声」。
 
 内部是数字（精力、心情、残响、关系权重），输出不能是数字：
 模型看见「心情 -0.4」只会演，看见「你现在不想笑」才会真的换个说法。
-所以这一层做三件事：
+所以这一层只做两件事：
 
     文字   一小段语气约束（句长、停顿、语气、能不能说「我不知道」）
-    内容   这一轮要把哪件事、哪一种立场真的说出口（如委屈要说出来）
     声音   给 TTS 的语速与音量（edge-tts 的 rate 百分比 + 播放音量）
-
-内容由 affect.content_rules 给出，并经 think.decide 的「这一轮想说的」
-进提示；语气由 text_block 的【怎么说】进提示。两者分开，不互相冒充。
 
 不做的事：不往回复里塞表情符号，不写「她笑着说」这种旁白。
 她说话的样子，应该从措辞和停顿里出来，不是从括弧里出来。
@@ -181,14 +177,13 @@ def plan(state: Optional[dict] = None, thought: Optional[dict] = None,
                     "tone": round(amb_tone, 3),
                     "text": ambient.get("text") or ""},
         "rules": rules[:8],
-        "content_rules": _affect.content_rules(feel, cap=2),
         "voice": {"rate": voice_rate, "volume": round(volume, 2)},
         "text": text,
     }
 
 
 def text_block(p: Optional[dict]) -> str:
-    """把语气计划拼成给模型看的一小段。不写旁白，只写怎么说。"""
+    """把表达计划拼成给模型看的一小段。不写旁白，只写怎么说。"""
     p = p or {}
     rules = [str(x).strip() for x in (p.get("rules") or []) if str(x).strip()]
     if not rules:

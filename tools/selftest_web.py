@@ -47,6 +47,11 @@ def main() -> int:
         check(health.get("version") == "0.8.0", "health version 0.8.0")
         check(health.get("response_gate", {}).get("mode") == "enforced", "response gate enforced")
         check(health.get("proactive") is True, "proactive worker enabled")
+        pacing = health.get("proactive_pacing") or {}
+        check(isinstance(pacing, dict) and pacing.get("mode") in (
+            "off", "shadow", "enforced") and pacing.get("level") in (
+                "essential", "low", "normal"),
+            "proactive pacing status exposed")
     except Exception as e:
         check(False, f"health request: {type(e).__name__}: {e}")
 

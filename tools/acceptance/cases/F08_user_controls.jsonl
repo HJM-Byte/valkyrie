@@ -1,0 +1,1 @@
+{"case_id": "F08", "suite": "F", "status": "disabled", "title": "essential / low / normal 与安静停止的优先级", "given": {"level": "low", "quiet": false, "intent": "react"}, "expect": {"pacing_result": "suppressed", "reason": "intent_not_allowed"}, "forbidden": {"model_config_modified_by_model": 0}, "disabled_reason": "由 tools/selftest_proactive_pacing.py 执行；不插入现有 runner 多轮集"}

@@ -10,6 +10,7 @@
 - 从公开仓库移除学校模块：删除 `app/school.py`、`school.cmd`、`tools/selftest_school.py` 及其配置、预算、对话回接、服务入口和验收引用；学习与成长链路保持不变。
 - 识海滚动渲染：滚动面板改为不透明底色，去掉 `backdrop-filter`，加入 `overscroll-behavior: contain` 与 `scrollbar-gutter: stable`；桌面滚动步长固定，只在内容尺寸变化时更新 `scrollregion`，修复滚动时星海透底造成的闪动。
 - 从公开仓库移除桌面 Tkinter 程序（`app/desktop.py`、`app/desktop_prep.py`、`desktop.cmd`、相关自检与 `breeze.cmd`），网页端成为对话与识海的默认入口；本地副本不再随仓库发布。
+- 主动消息降频：新增 `app/proactive_pacing.py`，在现有主动候选之后、模型调用之前接入等级/安静/用户宽限/每日上限/最小间隔/未回复退避与原子预留；默认 `off`，支持 `shadow` 观察与 `enforced` 生效。`low` 只放行高价值 `share`/`continue`，必要承诺与到期提醒不占非必要额度；发不出去的候选不补发、不换通道，也不写关系与长期记忆。
 - 情绪内容与表达调制：新增 `app/affect_modulator.py`，把当轮情绪转成可审计的 `ContentPlan`（内容顺序、必要契约、可选关心/追问、自我表露）与 `StylePlan`（语气、篇幅、直接程度、幽默、情绪可见度）；`think()` 在基础决策后接入，`Persona` 增加独立调制段。默认 `off`，支持 `shadow` 只记录、`enforced` 生效，内容/表达可独立关闭；不改事实、证据资格、关系变量或长期偏好。
 
 ## v0.1.0 — 2026-11-08

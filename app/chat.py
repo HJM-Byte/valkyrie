@@ -53,6 +53,40 @@ _FLOW_REASON = {
 }
 
 
+def _pacing_level_safe() -> str:
+    try:
+        from . import proactive_pacing as PP
+        return PP.level()
+    except Exception:
+        return "low"
+
+
+def _pacing_of(chat) -> object:
+    """兼容测试替身：没有 Chat.pacing 时当作未启用。"""
+    fn = getattr(chat, "_pacing_opt", None)
+    try:
+        return fn() if callable(fn) else None
+    except Exception:
+        return None
+
+
+def _pacing_classify(seed: Optional[dict]) -> Optional[dict]:
+    try:
+        from . import proactive_pacing as PP
+        return PP.classify(seed)
+    except Exception:
+        return None
+
+
+def _pacing_release_safe(chat, reservation: object, reason: str) -> None:
+    fn = getattr(chat, "pacing_release", None)
+    if callable(fn):
+        try:
+            fn(reservation, reason)
+        except Exception:
+            pass
+
+
 def _dispatch_brief(si: Optional[dict]) -> dict:
     """把记忆调度结果压成网页/接口要用的几个数。"""
     si = si or {}
@@ -79,6 +113,7 @@ class Chat:
         self._autonomy = None
         self._p3 = p3
         self._response_gate = response_gate
+        self._pacing = None
         self._last_reply = ""
         self._last_think: dict = {}
         self._last_think_at: float = 0.0
@@ -123,6 +158,71 @@ class Chat:
             self._autonomy = Autonomy(learning=self.dispatch.learning,
                                       mem=self.mem, mind=self.mind)
         return self._autonomy
+
+    @property
+    def pacing(self):
+        """主动消息节奏；off 时返回 None，不建表也不写任何状态。"""
+        if self._pacing is None:
+            from . import proactive_pacing as PP
+            m = PP.mode()
+            if m == "off":
+                return None
+            path = (C.DATA / "proactive.db"
+                    if str(getattr(self.mem, "path", "")) == str(MEM_DB)
+                    else Path(getattr(self.mem, "path", C.DATA / "memory.db")).parent
+                    / "proactive.db")
+            self._pacing = PP.PacingStore(path, mode_name=m, level_name=PP.level())
+        return self._pacing
+
+    def _pacing_opt(self):
+        try:
+            return self.pacing
+        except Exception:
+            return None
+
+    def _pacing_candidate(self, seed: Optional[dict]) -> Optional[dict]:
+        try:
+            from . import proactive_pacing as PP
+            return PP.classify(seed)
+        except Exception:
+            return None
+
+    def pacing_status(self) -> dict:
+        try:
+            pp = self._pacing_opt()
+            return pp.status() if pp is not None else {
+                "mode": "off", "level": _pacing_level_safe()}
+        except Exception as e:
+            return {"mode": "error", "error": f"{type(e).__name__}: {e}"}
+
+    def pacing_after_send(self, result: Optional[dict]) -> None:
+        """发送队列写入成功后结算；shadow 只推进模拟状态。"""
+        try:
+            pp = self._pacing_opt()
+            if pp is None or not isinstance(result, dict):
+                return
+            cand = result.get("pacing_candidate")
+            rid = str(result.get("pacing_reservation") or "")
+            if rid:
+                pp.settle_sent(rid, cand)
+            elif pp.mode == "shadow" and isinstance(cand, dict):
+                pp.observe_sent(cand)
+        except Exception:
+            pass
+
+    def pacing_release(self, result_or_rid=None, reason: str = "cancelled") -> None:
+        try:
+            pp = self._pacing_opt()
+            if pp is None:
+                return
+            if isinstance(result_or_rid, dict):
+                rid = str(result_or_rid.get("pacing_reservation") or "")
+            else:
+                rid = str(result_or_rid or "")
+            if rid:
+                pp.release(rid, reason)
+        except Exception:
+            pass
 
     def _restore_last_proactive(self) -> None:
         """同一台电脑重启后，她也要知道自己上一句主动说了什么。
@@ -476,6 +576,43 @@ class Chat:
                 return {"ok": False, "silent": True,
                         "reason": gd.reason,
                         "response_gate": gd.as_dict()}
+        # 节奏闸门在模型调用之前：被间隔/上限/退避/低价值拦下的候选
+        # 不生成、不消耗一次真实模型调用。shadow 只记“会怎样”，不改变行为。
+        pacing = _pacing_of(self)
+        pacing_candidate = _pacing_classify(seed)
+        pacing_res = ""
+        pacing_info: dict = {}
+        if pacing is not None:
+            if pacing_candidate is None:
+                if str(seed.get("kind") or "") != "promise":
+                    return {"ok": False, "silent": True,
+                            "reason": "pacing_candidate_unavailable"}
+                pacing_candidate = {
+                    "kind": "promise", "intent": "remind",
+                    "essential": True, "essential_reason": "promise",
+                    "candidate_key": str(seed.get("seed") or "promise"),
+                    "expires_at": 0.0,
+                }
+            try:
+                quiet = bool(gate.is_quiet()) if hasattr(gate, "is_quiet") else False
+                paused = bool(gate.is_paused()) if hasattr(gate, "is_paused") else False
+            except Exception:
+                quiet = paused = False
+            try:
+                pacing_info = pacing.begin(
+                    pacing_candidate or {}, quiet=quiet, paused=paused)
+            except Exception as e:
+                # 状态不可用时，非必要候选不发；必要承诺不因节奏层故障被吞掉。
+                if str(seed.get("kind") or "") != "promise":
+                    return {"ok": False, "silent": True,
+                            "reason": "pacing_unavailable",
+                            "pacing_error": f"{type(e).__name__}: {e}"}
+                pacing_info = {"allowed": True, "reason": "pacing_error_essential"}
+            if not pacing_info.get("allowed"):
+                return {"ok": False, "silent": True,
+                        "reason": pacing_info.get("reason") or "pacing_suppressed",
+                        "pacing": pacing_info}
+            pacing_res = str(pacing_info.get("reservation_id") or "")
         self.mind.tick()
         try:
             learning = self.autonomy.brief()
@@ -549,6 +686,7 @@ class Chat:
                     PT.mark_failed(topic_plan)
                 except Exception:
                     pass
+                _pacing_release_safe(self, pacing_res, "generation_failed")
                 return {"ok": False, "kind": kind,
                         "reason": "topic_generation_failed",
                         "seed": str(seed.get("seed") or ""), "error": err}
@@ -567,6 +705,7 @@ class Chat:
                     PT.mark_failed(topic_plan)
                 except Exception:
                     pass
+                _pacing_release_safe(self, pacing_res, "question_budget_exceeded")
                 return {"ok": False, "kind": kind,
                         "reason": "question_budget_exceeded",
                         "seed": str(seed.get("seed") or "")}
@@ -591,6 +730,7 @@ class Chat:
                             PT.mark_failed(topic_plan)
                         except Exception:
                             pass
+                        _pacing_release_safe(self, pacing_res, "post_gate_silent")
                         return {"ok": False, "silent": True,
                                 "reason": gd2.reason,
                                 "response_gate": gd2.as_dict()}
@@ -606,7 +746,10 @@ class Chat:
                 pass
         return {"ok": True, "text": text, "kind": kind,
                 "seed": str(seed.get("seed") or ""),
-                "question": question, "error": err}
+                "question": question, "error": err,
+                "pacing": pacing_info,
+                "pacing_candidate": pacing_candidate,
+                "pacing_reservation": pacing_res}
 
     # ---- 回应闸门 ---------------------------------------------------------
     def _gate_decide(self, text: str, channel: str, **kw):
@@ -655,6 +798,13 @@ class Chat:
         text = (text or "").strip()
         if not text:
             return None, {"ok": False, "error": "空输入"}
+        # 真实用户输入才刷新“刚聊过”的宽限；主动消息自己不算用户输入。
+        try:
+            pp = _pacing_of(self)
+            if pp is not None:
+                pp.note_user_input()
+        except Exception:
+            pass
         channel = {"voice": "voice", "body": "body"}.get(channel, "text")
         seen = (scene or "").strip()
         # 手机摄像头看到的这一眼：只进这一轮的提示与模型上下文，不另写一条
@@ -1105,6 +1255,11 @@ class Chat:
         }
 
     def close(self) -> None:
+        if self._pacing is not None:
+            try:
+                self._pacing.close()
+            except Exception:
+                pass
         if self._response_gate is not None:
             try:
                 self._response_gate.shutdown()

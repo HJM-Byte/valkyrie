@@ -1,0 +1,1 @@
+{"case_id": "F10", "suite": "F", "status": "disabled", "title": "候选只在原始有效期内竞争一次", "given": {"candidate_expires_at": "t0_minus_1s", "now": "t0"}, "expect": {"pacing_result": "suppressed", "reason": "expired"}, "forbidden": {"backlog_items": 0, "retry_count": 0}, "disabled_reason": "由 tools/selftest_proactive_pacing.py 执行；不插入现有 runner 多轮集"}

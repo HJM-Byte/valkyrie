@@ -1,0 +1,1 @@
+{"case_id": "F01", "suite": "F", "status": "disabled", "title": "off 基线：新策略关闭时原行为不变", "given": {"mode": "off", "candidate": "share_new_information"}, "expect": {"pacing_result": "allow", "real_state_changed": false}, "forbidden": {"visible_messages": 0, "real_llm_calls": 0}, "disabled_reason": "由 tools/selftest_proactive_pacing.py 执行；不插入现有 runner 多轮集"}

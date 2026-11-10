@@ -1,0 +1,1 @@
+{"case_id": "F05", "suite": "F", "status": "disabled", "title": "必要承诺/提醒不被额度、间隔、退避挤掉", "given": {"essential": true, "day_count": 3, "backoff_active": true}, "expect": {"pacing_result": "allow", "essential": true}, "forbidden": {"normal_topic_sent": 0}, "disabled_reason": "由 tools/selftest_proactive_pacing.py 执行；不插入现有 runner 多轮集"}

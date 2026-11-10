@@ -1197,6 +1197,27 @@ class PocketChat:
         with self._worker_lock:
             return self._ensure_chat().proactive(seed)
 
+    def pacing_after_send(self, result: Optional[dict[str, Any]]) -> None:
+        with self._worker_lock:
+            try:
+                self._ensure_chat().pacing_after_send(result)
+            except Exception:
+                pass
+
+    def pacing_release(self, result_or_rid=None, reason: str = "cancelled") -> None:
+        with self._worker_lock:
+            try:
+                self._ensure_chat().pacing_release(result_or_rid, reason)
+            except Exception:
+                pass
+
+    def pacing_status(self) -> dict[str, Any]:
+        with self._worker_lock:
+            try:
+                return self._ensure_chat().pacing_status()
+            except Exception:
+                return {"mode": "error"}
+
 
 def _auth_middleware(auth: PocketAuth):
     @web.middleware
@@ -1284,6 +1305,17 @@ def create_app(store: PocketStore, *, auth: PocketAuth, token: str,
 
     async def health(request: web.Request) -> web.Response:
         st = store.stats()
+        # 节奏状态要读 proactive.db；放到线程里，别让健康检查卡住事件循环。
+        if proactive_enabled and app.get("chat"):
+            try:
+                pacing_view = await asyncio.to_thread(
+                    app["chat"].pacing_status)
+            except Exception:
+                pacing_view = {"mode": C.PROACTIVE_PACING_MODE,
+                               "level": C.PROACTIVE_LEVEL}
+        else:
+            pacing_view = {"mode": C.PROACTIVE_PACING_MODE,
+                           "level": C.PROACTIVE_LEVEL}
         return _json({
             "ok": True, "app": "valkyrie-pocket", "version": APP_VERSION,
             "name": C.ROBOT_NAME, "time": _now_iso(),
@@ -1299,6 +1331,7 @@ def create_app(store: PocketStore, *, auth: PocketAuth, token: str,
                 "social_silence": (bool(response_gate.social_silence)
                                    if response_gate else False),
             },
+            "proactive_pacing": pacing_view,
             "memory": {"episodes": st["episodes"], "active": st["active"],
                        "facts": st["facts"]},
         })
@@ -1808,7 +1841,9 @@ def main(argv: Optional[list[str]] = None) -> int:
     else:
         print("自学    关")
     if a.proactive:
-        print("主动    开：不设固定节律，她想说就说")
+        pacing_mode = getattr(C, "PROACTIVE_PACING_MODE", "off")
+        pacing_level = getattr(C, "PROACTIVE_LEVEL", "low")
+        print(f"主动    开：节奏 {pacing_mode} / 等级 {pacing_level}")
     else:
         print("主动    关")
     print(f"配对码  {token}  （手机第一次打开要输入）")
@@ -1843,8 +1878,15 @@ def main(argv: Optional[list[str]] = None) -> int:
                     res = app["chat"].proactive(seed)
                     if not res.get("ok") or not res.get("text"):
                         continue
-                    rec = pstore.record(res["text"], kind=res.get("kind") or "ask",
-                                        seed=key)
+                    try:
+                        rec = pstore.record(
+                            res["text"], kind=res.get("kind") or "ask", seed=key)
+                    except Exception:
+                        # 队列没写成，不能算“已发送”；释放预留，保持节奏状态不变。
+                        app["chat"].pacing_release(res, "queue_write_failed")
+                        raise
+                    # 只有队列写入成功才结算；shadow 只推进模拟状态。
+                    app["chat"].pacing_after_send(res)
                     if seed.get("kind") == "topic" and isinstance(seed.get("plan"), dict):
                         try:
                             from . import proactive_topic as PT

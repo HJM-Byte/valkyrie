@@ -133,6 +133,14 @@ BREEZE_VOICE_ID=voc_wkzpcy2xxwch
 # ROBOT_AFFECT_MODULATION_MODE=shadow
 # ROBOT_AFFECT_CONTENT=1
 # ROBOT_AFFECT_STYLE=1
+
+# 主动消息节奏：enforced 才真正收紧；默认低频是 low
+# essential 只保留必要事项；normal 恢复八类主动意图
+# ROBOT_PROACTIVE_PACING_MODE=enforced
+# ROBOT_PROACTIVE_LEVEL=low
+# ROBOT_PROACTIVE_MIN_INTERVAL_MINUTES=180
+# ROBOT_PROACTIVE_NONESSENTIAL_DAILY_CEILING=3
+# ROBOT_PROACTIVE_POST_USER_GRACE_MINUTES=60
 ```
 
 `.env` 已在 `.gitignore` 里。不要把 Key 写进代码、Issue、截图或提交记录。

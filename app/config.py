@@ -303,6 +303,52 @@ PROACTIVE_TOPIC_LOG = os.environ.get(
     "ROBOT_PROACTIVE_TOPIC_LOG", "1") != "0"
 PROACTIVE_TOPIC_DIR = DATA / "proactive_topic"
 
+# --- 主动消息节奏（Proactive Pacing，2026-11-10 方案）----------------------
+# off：完全保持原行为；shadow：只记录会允许/会抑制；enforced：真正收紧发送权。
+# 等级：essential 只保留必要事项；low 只放行高价值 share/continue；
+# normal 保留八类主动意图，但仍受安静、间隔、日上限和退避约束。
+PROACTIVE_PACING_MODE = (os.environ.get(
+    "ROBOT_PROACTIVE_PACING_MODE", "off") or "off").strip().lower()
+if PROACTIVE_PACING_MODE not in ("off", "shadow", "enforced"):
+    PROACTIVE_PACING_MODE = "off"
+PROACTIVE_LEVEL = (os.environ.get(
+    "ROBOT_PROACTIVE_LEVEL", "low") or "low").strip().lower()
+if PROACTIVE_LEVEL not in ("essential", "low", "normal"):
+    PROACTIVE_LEVEL = "low"
+try:
+    PROACTIVE_MIN_INTERVAL_MINUTES = int(os.environ.get(
+        "ROBOT_PROACTIVE_MIN_INTERVAL_MINUTES", "180") or "180")
+except (TypeError, ValueError):
+    PROACTIVE_MIN_INTERVAL_MINUTES = 180
+try:
+    PROACTIVE_NONESSENTIAL_DAILY_CEILING = int(os.environ.get(
+        "ROBOT_PROACTIVE_NONESSENTIAL_DAILY_CEILING", "3") or "3")
+except (TypeError, ValueError):
+    PROACTIVE_NONESSENTIAL_DAILY_CEILING = 3
+try:
+    PROACTIVE_POST_USER_GRACE_MINUTES = int(os.environ.get(
+        "ROBOT_PROACTIVE_POST_USER_GRACE_MINUTES", "60") or "60")
+except (TypeError, ValueError):
+    PROACTIVE_POST_USER_GRACE_MINUTES = 60
+try:
+    PROACTIVE_FIRST_UNANSWERED_BACKOFF_MINUTES = int(os.environ.get(
+        "ROBOT_PROACTIVE_FIRST_UNANSWERED_BACKOFF_MINUTES", "720") or "720")
+except (TypeError, ValueError):
+    PROACTIVE_FIRST_UNANSWERED_BACKOFF_MINUTES = 720
+try:
+    PROACTIVE_REPEATED_UNANSWERED_BACKOFF_MINUTES = int(os.environ.get(
+        "ROBOT_PROACTIVE_REPEATED_UNANSWERED_BACKOFF_MINUTES", "1440") or "1440")
+except (TypeError, ValueError):
+    PROACTIVE_REPEATED_UNANSWERED_BACKOFF_MINUTES = 1440
+PROACTIVE_PACING_LOG = os.environ.get(
+    "ROBOT_PROACTIVE_PACING_LOG", "1") != "0"
+PROACTIVE_PACING_DIR = DATA / "proactive_pacing"
+try:
+    PROACTIVE_PACING_RESERVATION_TTL_S = int(os.environ.get(
+        "ROBOT_PROACTIVE_PACING_RESERVATION_TTL_SECONDS", "120") or "120")
+except (TypeError, ValueError):
+    PROACTIVE_PACING_RESERVATION_TTL_S = 120
+
 # --- P4 记忆强化（随时间衰减） ----------------------------------------------
 # 召回一次会强化，但记忆越老强化越少，且上次强化留下的影响会退。
 # B0 是单次强化的最大增量；BMAX 是强度上限；两个 τ 都以天计。

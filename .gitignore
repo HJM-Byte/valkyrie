@@ -38,6 +38,7 @@ data/pocket_token.txt
 # 情绪调制与自然回应验收用例是代码的一部分；S 系列运行时用例仍不公开
 !tools/acceptance/cases/A*.jsonl
 !tools/acceptance/cases/N*.jsonl
+!tools/acceptance/cases/F*.jsonl
 
 # --- 模型与二进制 -----------------------------------------------------------
 /models/

@@ -1,0 +1,1 @@
+{"case_id": "F11", "suite": "F", "status": "disabled", "title": "间隔、上限、安静、低价值均在真实模型调用前拦截", "given": {"reason": "daily_ceiling", "candidate": "share"}, "expect": {"visible_messages": 0, "real_llm_calls": 0, "pre_llm_suppressed": true}, "forbidden": {"budget_consumed": 0}, "disabled_reason": "由 tools/selftest_proactive_pacing.py 执行；不插入现有 runner 多轮集"}

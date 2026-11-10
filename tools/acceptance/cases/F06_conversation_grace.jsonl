@@ -1,0 +1,1 @@
+{"case_id": "F06", "suite": "F", "status": "disabled", "title": "用户输入后的宽限期内不插入主动话题", "given": {"post_user_grace_minutes": 60, "elapsed_minutes": 5, "candidate": "share"}, "expect": {"pacing_result": "suppressed", "reason": "user_grace"}, "forbidden": {"visible_messages": 0, "extra_llm_calls": 0}, "disabled_reason": "由 tools/selftest_proactive_pacing.py 执行；不插入现有 runner 多轮集"}

@@ -231,7 +231,7 @@ docs/               本地开发记录；默认不进入公开仓库
 .\.venv\Scripts\python.exe -m tools.selftest_emotion
 ```
 
-测试数据必须写临时库，不能写 `data/memory.db`。具体约定见 [CONTRIBUTING.md](CONTRIBUTING.md)。
+测试数据必须写临时库，不能写 `data/memory.db`。具体约定见 [CONTRIBUTING.md](CONTRIBUTING.md)；完整检查方法与最近一次结果见 [TESTING.md](TESTING.md)。
 
 ## 安全
 

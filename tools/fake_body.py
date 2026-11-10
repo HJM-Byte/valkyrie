@@ -4,7 +4,7 @@
     python -m tools.fake_body --seconds 5
 
 它不会写 memory.db、不会启动 Chat；只验证协议与服务端。
-真板子联调时用 `tools.fake_body` 对 `app.xiaozhi_server`，真身体走 `desktop.py --body`。
+真板子联调时用 `tools.fake_body` 对 `app.xiaozhi_server`，真身体走 `body_server.cmd`。
 """
 from __future__ import annotations
 

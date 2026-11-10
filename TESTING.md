@@ -35,7 +35,7 @@ Get-ChildItem tools\selftest_*.py | Sort-Object Name | ForEach-Object {
 - 8766 health：`ok=true`、`version=0.8.0`、`proactive=true`、`response_gate.mode=enforced`
 - 识海页面：用 `app.sihai --demo --serve --port 8799` 起临时实例，`/sihai.html` 返回 200；正式 8767 由 `sihai.cmd` 按需拉起，不是常驻服务
 
-覆盖范围包括：对话与人格、情绪与关系、记忆与识海、学习与主动消息、网页与 PWA、桌面视图、日记、语音链路、视觉准备、手机协议、ESP32 身体协议（模拟设备）。
+覆盖范围包括：对话与人格、情绪与关系、记忆与识海、学习与主动消息、网页与 PWA、识海视图、日记、语音链路、视觉准备、手机协议、ESP32 身体协议（模拟设备）。
 
 ## 干净克隆检查
 
@@ -43,8 +43,9 @@ Get-ChildItem tools\selftest_*.py | Sort-Object Name | ForEach-Object {
 
 - `install.ps1 -NoShortcuts -NoLaunch`：退出 0；用环境变量提供测试 Key 时 `.env` 正确写入，不再跳过输入。
 - `bootstrap.ps1`：退出 0，生成 `.env` 后停止；中文提示在 Windows PowerShell 5.1 下正常显示。
-- `requirements.txt` 与 `requirements-voice.txt` 均安装成功；`desktop --demo` 截图成功，`sihai --demo` 生成 72 节点 / 122 边，`pocket_server --demo --readonly` 的 `/api/health` 与 `/` 均返回 200。
-- 核心内存/桌面/识海/协议自检通过；`selftest_apk_download` 在无 APK 时明确 SKIP，`selftest_memory_strength` 在只有核心依赖时跳过语音接线检查，`selftest_response_gate` 的 N 系列用例随仓库提供。
+- `requirements.txt` 与 `requirements-voice.txt` 均安装成功；`web.cmd --no-open` 启动 `8766` 并通过 health 检查，`sihai --demo` 生成 72 节点 / 122 边，`pocket_server --demo --readonly` 的 `/api/health` 与 `/` 均返回 200。
+- 桌面程序已移出公开仓库：干净克隆中不存在 `desktop.cmd`、`app/desktop.py`、`app/desktop_prep.py` 及桌面自检；默认入口是 `web.cmd`，识海和对话都在网页端。
+- 核心内存/识海/协议自检通过；`selftest_web` 在带 `data/` 备份的工作区 25/25，干净克隆没有这些运行时文件时只验证 `web.cmd` 的 health 与首页，不检查备份。`selftest_apk_download` 在无 APK 时明确 SKIP，`selftest_memory_strength` 在只有核心依赖时跳过语音接线检查，`selftest_response_gate` 的 N 系列用例随仓库提供。
 - 还没覆盖：第二台物理电脑、macOS/Linux、8768 真机、真实模型下载与云端 Key 调用。
 
 ## 边界

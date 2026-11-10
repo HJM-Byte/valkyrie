@@ -9,31 +9,25 @@ cls
 echo.
 echo   Valkyrie - PC launcher
 echo   ---------------------------------------------
-echo   1  Desktop          desktop.cmd (star map + chat + voice)
+echo   1  Web (default)     web.cmd (chat + sihai, 8766)
 echo   2  Phone chat        talk.cmd (8766, same Wi-Fi)
 echo   3  Voice pipeline    run.cmd (mic + camera + board)
 echo   4  Text entry        chat.cmd (no microphone needed)
 echo   5  Phone read-only   pocket.cmd (look, do not wake her)
-echo   6  Web browser       web.cmd (local web UI, long-lived service)
-echo   7  Sihai web         sihai.cmd (8767, desktop star-map entry)
+echo   6  Sihai standalone  sihai.cmd (8767, read-only star map)
 echo   Q  Quit
 echo.
 echo   Response gate: enforced, social silence: on.
 echo   Add --response-gate off to a .cmd to restore old behavior.
 echo.
-choice /c 1234567Q /n /m "Choose: "
-if errorlevel 8 goto end
-if errorlevel 7 goto sihai
-if errorlevel 6 goto web
+choice /c 123456Q /n /m "Choose: "
+if errorlevel 7 goto end
+if errorlevel 6 goto sihai
 if errorlevel 5 goto pocket
 if errorlevel 4 goto chat
 if errorlevel 3 goto voice
 if errorlevel 2 goto phone
-if errorlevel 1 goto desktop
-
-:desktop
-call "%~dp0desktop.cmd"
-goto menu
+if errorlevel 1 goto web
 
 :phone
 call "%~dp0talk.cmd"

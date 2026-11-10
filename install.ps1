@@ -331,14 +331,17 @@ try {
             $programs = [Environment]::GetFolderPath('Programs')
             $startDir = Join-Path $programs 'Valkyrie'
             New-Item -ItemType Directory -Force -Path $startDir | Out-Null
+            $webTarget = Join-Path $Root 'web.cmd'
             if ($desktop) {
                 New-Shortcut -Path (Join-Path $desktop '瓦尔基里.lnk') `
-                    -Target (Join-Path $Root 'start.cmd') -Description 'Valkyrie'
+                    -Target $webTarget -Description 'Valkyrie Web (chat + sihai)'
             }
             New-Shortcut -Path (Join-Path $startDir '瓦尔基里.lnk') `
-                -Target (Join-Path $Root 'start.cmd') -Description 'Valkyrie'
+                -Target $webTarget -Description 'Valkyrie Web (chat + sihai)'
+            New-Shortcut -Path (Join-Path $startDir '启动菜单.lnk') `
+                -Target (Join-Path $Root 'start.cmd') -Description 'Valkyrie Launcher'
             New-Shortcut -Path (Join-Path $startDir '网页端.lnk') `
-                -Target (Join-Path $Root 'web.cmd') -Description 'Valkyrie Web'
+                -Target $webTarget -Description 'Valkyrie Web'
             Write-Host '已创建桌面和开始菜单快捷方式。' -ForegroundColor Green
         } catch {
             Warn ('快捷方式创建失败：' + $_.Exception.Message)

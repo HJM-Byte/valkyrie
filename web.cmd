@@ -14,7 +14,7 @@ set "URL=http://127.0.0.1:8766/"
 if defined TOKEN set "URL=%URL%?token=%TOKEN%"
 
 echo.
-echo Valkyrie - web UI
+echo Valkyrie - web UI (chat + sihai)
 echo Local: %URL%
 echo Starting the local service if it is not already up...
 echo.

@@ -1,6 +1,6 @@
 @echo off
 rem 识海 · 记忆星图。默认读 data\memory.db；加 --demo 看示例数据。
-rem 8767 是电脑端统一入口；重复启动只会打开已有页面。
+rem 8766 网页端已包含识海；这个 8767 入口用于单独看星图。
 chcp 65001 >nul
 cd /d "%~dp0"
 set "PY=%~dp0.venv\Scripts\python.exe"

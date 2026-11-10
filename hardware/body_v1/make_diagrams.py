@@ -63,7 +63,7 @@ def make_system_block() -> None:
         "faster-whisper 语音识别",
         "Yunet + SFace 认脸",
         "TTS（edge / 本地 VITS）",
-        "桌面版：星图 / 面板 / 对话",
+        "网页版：星图 / 面板 / 对话",
     ]):
         text(d, (112, 315 + i * 54), "· " + s, 22, INK)
 

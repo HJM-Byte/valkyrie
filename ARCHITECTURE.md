@@ -2,15 +2,14 @@
 
 这份文档只说明代码怎么分、数据怎么流，不重复 README 的安装步骤。
 
-## 三条入口
+## 两个入口
 
 ```text
-desktop.cmd  →  app.desktop  →  Tkinter 桌面窗口
-web.cmd      →  app.pocket_server --lan --chat  →  8766 浏览器/手机
-sihai.cmd    →  app.sihai --serve --port 8767  →  识海网页
+web.cmd      →  app.pocket_server --lan --chat  →  8766 浏览器/手机（对话 + 识海）
+sihai.cmd    →  app.sihai --serve --port 8767  →  独立识海网页（只读）
 ```
 
-三个入口共用同一份 `data/memory.db`、同一套 `Chat`、`Memory`、`Sihai` 和 `Mind`。桌面窗口和网页端不是两套大脑。
+两个入口共用同一份 `data/memory.db`、同一套 `Chat`、`Memory`、`Sihai` 和 `Mind`。网页端和识海页不是两套大脑。
 
 ## 核心数据流
 
@@ -40,7 +39,6 @@ LLM（OpenAI 兼容接口）
 - `app/affect.py` / `app/emotion.py` / `app/desire.py` / `app/mind.py`：情绪、七情六欲、关系与状态。
 - `app/affect_modulator.py`：把当轮情绪转成内容计划与表达计划；只读上游契约，不写库、不调模型。
 - `app/sihai.py`：星图数据与本地 HTTP 服务。
-- `app/desktop.py`：Tkinter 桌面窗口。
 - `app/pocket_server.py`：手机/网页服务，`/api/chat` 与 SSE。
 - `app/pocket_web/`：手机/网页前端资源。
 - `app/body_*.py` / `app/xiaozhi_server.py`：ESP32 身体链路，可选。

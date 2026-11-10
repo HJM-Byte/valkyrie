@@ -1,6 +1,6 @@
 # Valkyrie · 瓦尔基里
 
-瓦尔基里是一个住在 Windows PC 上的 AI 伙伴。她不是套一个聊天框的 Demo：记忆、情绪、关系状态和表达都在本机，桌面窗口、网页、识海星图。
+瓦尔基里是一个住在 Windows PC 上的 AI 伙伴。她不是套一个聊天框的 Demo：记忆、情绪、关系状态和表达都在本机，入口是网页端和识海星图。
 
 情绪不是只改语气的装饰：她这一轮先按情绪生成内容计划——先说什么、哪些必须保留、能不能多问一句、要不要轻表露；再生成表达计划——语气、篇幅、直接程度、幽默和声音。必要任务、错误说明、权限与承诺只读，不被情绪删改。
 
@@ -22,7 +22,7 @@
 - **残响。** 已经想不起是哪件事、但仍在影响她的那层底子。它没有原文可讲，会进评价、进语气，也会在识海图上变成灰环；她只能说“我也说不上来”，不许给它编一件具体的旧事。
 - **归属与撤回。** 愿望、转述、推测不会被当成亲历；用户明确纠正或要求删除时，旧记录标记为撤回，原文不删、可核对，但不再参与召回、扩散、残响和星图。
 - **星图是视图，不参与调度。** `web/sihai.html` 是纯手写透视投影，没有 three.js、没有外链，断网也能打开；图上的数字直接调用记忆层的同一组函数。
-- **本地 SQLite。** 记忆存在 `data/memory.db`，桌面、网页、手机共用同一份。写入闸门在 `app/mind.py` 的 `GROWTH_LOCKED`：当前代码默认不锁（`False`），第一次真实对话就会写进去；只想先看界面，用 `desktop.cmd --demo`，或把它改成 `True`。
+- **本地 SQLite。** 记忆存在 `data/memory.db`，网页和手机共用同一份。写入闸门在 `app/mind.py` 的 `GROWTH_LOCKED`：当前代码默认不锁（`False`），第一次真实对话就会写进去；只想先看界面，先运行 `web.cmd` 不对话，或把它改成 `True`。
 
 更细的模块与数据流见 [ARCHITECTURE.md](ARCHITECTURE.md)。
 
@@ -40,9 +40,9 @@
 
 ### 表达与入口
 
-- **桌面程序**：原生 Tkinter 窗口，对话、识海星图、记忆详情、时间轴和状态面板在一个窗口里；识海页的顶栏、胶囊导航、左侧「她此刻」、详情抽屉与底部时间轴按 `sihai.html` 原生重画，不走浏览器、不嵌 8767。
-- **网页端**：`8766`，电脑宽屏是“镜面 + 识海”双栏，手机窄屏单列；可安装为 PWA。
-- **识海页**：`8767`，独立的只读星图页。
+- **网页端（默认入口）**：`web.cmd` 打开 `8766`，对话和识海在同一个网页里；电脑宽屏是“镜面 + 识海”双栏，手机窄屏单列，可安装为 PWA。
+- **识海页**：`sihai.cmd` 打开 `8767`，独立的只读星图页，用来单独看星图；对话仍走 `8766`。
+- **桌面程序**：已从公开仓库移除，不再随安装器发布；网页端是默认入口。
 - **自然回应**：`respond / brief / defer / silent / pause_stated` 五种模式；代码默认关闭，启动脚本显式打开。
 - **可选语音**：麦克风 → faster-whisper → LLM → TTS（BreezeBlue / edge-tts / 本地 VITS）。
 - **可选身体**：ESP32-S3 + 摄像头 + 麦克风 + 喇叭，通过本机 `8768` 服务接入；没有硬件也能只跑 PC。
@@ -76,10 +76,10 @@ cd C:\valkyrie
 
 ### 2. 一键安装
 
-双击 `install.cmd`。它会检查 Python 3.11+（没有时可用 winget 安装 3.13）、创建 `.venv`、安装核心依赖、生成 `.env`、询问一次 LLM API Key，并创建桌面和开始菜单快捷方式。
+双击 `install.cmd`。它会检查 Python 3.11+（没有时可用 winget 安装 3.13）、创建 `.venv`、安装核心依赖、生成 `.env`、询问一次 LLM API Key，并创建指向网页端的桌面和开始菜单快捷方式。
 
 ```cmd
-:: 只装核心：桌面、网页、识海、LLM 调用
+:: 只装核心：网页、识海、LLM 调用
 install.cmd
 
 :: 需要麦克风、摄像头、本地语音时
@@ -140,22 +140,15 @@ BREEZE_VOICE_ID=voc_wkzpcy2xxwch
 ### 4. 启动
 
 ```cmd
-start.cmd               :: 统一菜单
+start.cmd               :: 统一菜单（1 号是网页端）
 install.cmd             :: 一键安装/补依赖
-desktop.cmd             :: 桌面主入口（原生 Tkinter，识海界面原生复刻）
-web.cmd                 :: 网页端 8766
-sihai.cmd               :: 识海页 8767
+web.cmd                 :: 默认入口（网页对话 + 识海，8766）
+sihai.cmd               :: 独立识海页（8767，只读）
 chat.cmd                :: 纯文字入口，不需要麦克风
 run.cmd                 :: 完整语音流水线
 ```
 
-第一次建议用 `desktop.cmd --demo` 看示例数据，不写真实库：
-
-```cmd
-desktop.cmd --demo
-```
-
-确认界面正常后，再运行 `desktop.cmd` 使用真实数据。
+第一次直接运行 `web.cmd`：它会启动 `8766` 并打开浏览器，对话和识海都在这个网页里。只想看示例数据、不碰真实库，可以用 `python -m app.pocket_server --demo`，它只读示例库。
 
 ### 5. 模型（可选，但语音/视觉需要）
 
@@ -175,7 +168,7 @@ desktop.cmd --demo
 ## 目录
 
 ```text
-app/                核心代码：对话、记忆、情绪、桌面、网页、识海、身体
+app/                核心代码：对话、记忆、情绪、网页、识海、身体
   pocket_web/       手机/网页前端
   pocket_apk/       可选的 Android 壳（首版不随仓库发布，需要 Android SDK）
 tools/              自检、维护、数据采集与模型训练脚本
@@ -199,14 +192,14 @@ docs/               本地开发记录；默认不进入公开仓库
 - 需要联网的只有 LLM、可选的 TTS 服务和可选的模型下载。
 - `web.cmd` 的 `8766` 和身体的 `8768` 是局域网服务。它们不是公网服务；在不可信网络里请设置 `VALKYRIE_APP_TOKEN`，并确认防火墙只放行需要的网段。
 - 摄像头默认锁定（`VISION_LOCKED = True`），不会因为程序启动就打开。需要视觉时再显式解锁。
-- 第一次真实对话会写进 `data/memory.db`；只想看界面不写库，用 `desktop.cmd --demo`。
+- 第一次真实对话会写进 `data/memory.db`；只想看界面不写库，用 `python -m app.pocket_server --demo`，或先不对话。
 - 删除 `data/` 等于删除她的长期记忆；先备份再删。
 
 ## 现在能跑什么，不能跑什么
 
 **能跑：**
 
-- Windows 桌面窗口、网页端、识海页、文字对话
+- Windows 网页端、识海页、文字对话
 - 本地 SQLite 记忆、遗忘、残响、记忆调度、识海星图
 - 二十一种情绪、七情归类、六欲、关系状态与表达计划
 - 接入 OpenAI 兼容 LLM
@@ -216,7 +209,7 @@ docs/               本地开发记录；默认不进入公开仓库
 **还没做：**
 
 - 首次安装仍需自己提供一个 LLM API Key（安装器会引导）
-- macOS / Linux 的桌面端
+- macOS / Linux 的启动脚本与验证
 - 对所有第三方模型的授权再分发
 - 一个干净的、面向新用户的完整模型下载器
 - 手机 APK 的通用签名与发布流程
@@ -228,7 +221,6 @@ docs/               本地开发记录；默认不进入公开仓库
 ```powershell
 .\.venv\Scripts\python.exe -m compileall app tools
 .\.venv\Scripts\python.exe -m tools.selftest_sihai
-.\.venv\Scripts\python.exe -m tools.selftest_desktop
 .\.venv\Scripts\python.exe -m tools.selftest_memory
 .\.venv\Scripts\python.exe -m tools.selftest_emotion
 ```

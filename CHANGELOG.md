@@ -9,7 +9,7 @@
 - README 明确 `GROWTH_LOCKED` 默认写入真实库、`--demo` 不写库，以及日记目录与数据目录的边界。
 - 从公开仓库移除学校模块：删除 `app/school.py`、`school.cmd`、`tools/selftest_school.py` 及其配置、预算、对话回接、服务入口和验收引用；学习与成长链路保持不变。
 - 识海滚动渲染：滚动面板改为不透明底色，去掉 `backdrop-filter`，加入 `overscroll-behavior: contain` 与 `scrollbar-gutter: stable`；桌面滚动步长固定，只在内容尺寸变化时更新 `scrollregion`，修复滚动时星海透底造成的闪动。
-- 桌面识海原生复刻：不再使用 Edge 承载网页，`app/desktop.py` 直接按 `sihai.html` 重画顶栏、八块胶囊导航、左侧面板、详情抽屉、思考线、时间轴与卡片；新增 `分寸`、`意义`、`人格` 三块只读视图，数据与 `Chat.panel_payload()` / `Memory` 同源。
+- 从公开仓库移除桌面 Tkinter 程序（`app/desktop.py`、`app/desktop_prep.py`、`desktop.cmd`、相关自检与 `breeze.cmd`），网页端成为对话与识海的默认入口；本地副本不再随仓库发布。
 - 情绪内容与表达调制：新增 `app/affect_modulator.py`，把当轮情绪转成可审计的 `ContentPlan`（内容顺序、必要契约、可选关心/追问、自我表露）与 `StylePlan`（语气、篇幅、直接程度、幽默、情绪可见度）；`think()` 在基础决策后接入，`Persona` 增加独立调制段。默认 `off`，支持 `shadow` 只记录、`enforced` 生效，内容/表达可独立关闭；不改事实、证据资格、关系变量或长期偏好。
 
 ## v0.1.0 — 2026-11-08

@@ -4,7 +4,7 @@
 
 1. 在 Issue 里说清楚要解决的问题，不要直接开一个包含大量个人数据或密钥的 PR。
 2. 从主分支拉一个短分支，改动尽量只碰一个主题。
-3. 在 Windows 上跑过再提交；这个项目的桌面端和身体链路目前是 Windows 优先。
+3. 在 Windows 上跑过再提交；这个项目的网页端和身体链路目前是 Windows 优先。
 
 ## 本地环境
 
@@ -33,7 +33,6 @@ copy .env.example .env
 ```powershell
 .\.venv\Scripts\python.exe -m compileall app tools
 .\.venv\Scripts\python.exe -m tools.selftest_sihai
-.\.venv\Scripts\python.exe -m tools.selftest_desktop
 .\.venv\Scripts\python.exe -m tools.selftest_memory
 ```
 
@@ -52,7 +51,7 @@ copy .env.example .env
 短句，说清动作和对象，例如：
 
 ```text
-修复 desktop 在无模型时的启动崩溃
+修复网页端在无模型时的启动崩溃
 增加 ROBOT_MODELS 环境变量
 ```
 

@@ -65,6 +65,15 @@ data/pocket_token.txt
 /web/*.bak*
 /web/*.bak_*
 
+# --- 已移除的桌面程序 -------------------------------------------------------
+# 桌面 Tkinter 程序不再随公开仓库发布；本地副本保留，仅用于作者本机回退。
+/app/desktop.py
+/app/desktop_prep.py
+/desktop.cmd
+/breeze.cmd
+/tools/selftest_desktop.py
+/tools/selftest_desktop_views.py
+
 # --- Python / 构建缓存 ------------------------------------------------------
 __pycache__/
 *.py[cod]

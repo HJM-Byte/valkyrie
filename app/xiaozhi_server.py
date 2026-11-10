@@ -10,8 +10,8 @@
 - /xiaozhi/v1/ 做 hello 握手、设备去重、收上行音频/文本、发下行文本；
 - 不构造 Chat、不写 memory.db、不碰 sleep.json。
 
-真身体必须由 desktop.py --body 启动，让服务与桌面共用同一个 Chat；
-本进程只供假身体/协议调试用。
+真身体入口是 `body_server.cmd`：它通过 `--chat` 接 STT/Chat/TTS，
+写入边界由 `BODY_ALLOW_WRITES` / `BODY_LIVE` 控制；本进程也可直接启动做假身体/协议调试。
 """
 from __future__ import annotations
 

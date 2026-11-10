@@ -7,7 +7,7 @@
 - 同一 Device-Id 重连时踢掉旧连接
 - 每台设备的音频参数、收发统计
 
-真正的 HTTP/WS 监听在 `app.xiaozhi_server`，真机联调入口在 `desktop.py --body`。
+真正的 HTTP/WS 监听在 `app.xiaozhi_server`，真机联调入口在 `body_server.cmd`。
 """
 from __future__ import annotations
 

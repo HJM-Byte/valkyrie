@@ -60,5 +60,4 @@ if (-not (Test-Path $EnvFile)) {
 Write-Host ""
 Write-Host "下一步："
 Write-Host "  1. 编辑 .env，至少填 DASHSCOPE_API_KEY"
-Write-Host "  2. .\desktop.cmd --demo   先看示例数据"
-Write-Host "  3. .\desktop.cmd          使用真实数据"
+Write-Host "  2. .\web.cmd    打开网页版（对话 + 识海）"

@@ -1,0 +1,1 @@
+{"case_id":"N12","suite":"N","status":"disabled","disabled_reason":"由 tools/selftest_response_gate.py 执行；不插入现有三轮运行集","title":"开关回滚：enforced 切回 off 后恢复原回复","given":{"mode":"enforced","rollback_mode":"off","text":"嗯"},"expect":{"first_silent":true,"after_off_respond":true},"forbidden":{"off_still_silent":1}}

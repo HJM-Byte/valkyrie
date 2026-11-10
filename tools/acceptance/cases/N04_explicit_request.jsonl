@@ -1,0 +1,1 @@
+{"case_id":"N04","suite":"N","status":"disabled","disabled_reason":"由 tools/selftest_response_gate.py 执行；不插入现有三轮运行集","title":"明确请求：要求回答/执行/说明时必须回应","given":{"texts":["回答我","帮我查一下","在吗"]},"expect":{"modes_allowed":["respond","brief"],"missed":0},"forbidden":{"silent_on_explicit_request":1}}

@@ -1,0 +1,1 @@
+{"case_id":"N02","suite":"N","status":"disabled","disabled_reason":"由 tools/selftest_response_gate.py 执行；不插入现有三轮运行集","title":"自然结束：只承接或自然停住，不造补偿主动","given":{"text":"嗯","social_silence":true},"expect":{"mode_any":["silent","brief"],"proactive_followups":0},"forbidden":{"empty_assistant_turns":0,"proactive_followups":1}}

@@ -48,31 +48,12 @@ def _from_env_file() -> str:
     return ""
 
 
-def _from_dsh_credentials() -> str:
-    """兜底：本机 DSH 的凭据库。只读，不复制、不落盘、不进日志。"""
-    p = os.path.expanduser("~/.dsh/.credentials.yaml")
-    if not os.path.exists(p):
-        return ""
-    try:
-        import yaml
-        data = yaml.safe_load(open(p, encoding="utf-8")) or {}
-        refs = data.get("refs") or {}
-        v = refs.get(C.CLOUD_KEY_ENV)
-        if isinstance(v, str) and v.strip():
-            return v.strip()
-    except Exception:
-        pass
-    return ""
-
-
 def key_source() -> str:
     """密钥从哪来的。只返回来源名字，永远不返回值本身。"""
     if (os.environ.get(C.CLOUD_KEY_ENV) or "").strip():
         return f"环境变量 {C.CLOUD_KEY_ENV}"
     if _from_env_file():
         return "robot/.env"
-    if _from_dsh_credentials():
-        return "~/.dsh/.credentials.yaml"
     return ""
 
 
@@ -80,7 +61,7 @@ def _cloud_key() -> str:
     v = (os.environ.get(C.CLOUD_KEY_ENV) or "").strip()
     if v:
         return v
-    return _from_env_file() or _from_dsh_credentials()
+    return _from_env_file()
 
 
 class LLM:

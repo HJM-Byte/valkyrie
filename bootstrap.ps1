@@ -1,4 +1,4 @@
-# 创建本地 Python 环境并安装依赖。
+﻿# 创建本地 Python 环境并安装依赖。
 # 用法：
 #   powershell -ExecutionPolicy Bypass -File .\bootstrap.ps1
 #   powershell -ExecutionPolicy Bypass -File .\bootstrap.ps1 -Voice

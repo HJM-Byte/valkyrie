@@ -132,9 +132,13 @@ def main() -> int:
                   "reinforce=True" in inspect.getsource(Chat._begin_turn))
             check("Chat.compose 默认不强化",
                   inspect.signature(Chat.compose).parameters["reinforce"].default is False)
-            from app.pipeline import Pipeline
-            check("语音 turn 也传 reinforce=True",
-                  "reinforce=True" in inspect.getsource(Pipeline.one_turn))
+            try:
+                from app.pipeline import Pipeline
+            except ModuleNotFoundError as exc:
+                print(f"  SKIP  语音 turn 接线检查（缺可选依赖 {exc.name}）")
+            else:
+                check("语音 turn 也传 reinforce=True",
+                      "reinforce=True" in inspect.getsource(Pipeline.one_turn))
 
             print("— 两条衰减 —")
             d0 = S.reinforcement_delta(now, 0.0, now)

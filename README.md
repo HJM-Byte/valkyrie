@@ -22,7 +22,7 @@
 - **残响。** 已经想不起是哪件事、但仍在影响她的那层底子。它没有原文可讲，会进评价、进语气，也会在识海图上变成灰环；她只能说“我也说不上来”，不许给它编一件具体的旧事。
 - **归属与撤回。** 愿望、转述、推测不会被当成亲历；用户明确纠正或要求删除时，旧记录标记为撤回，原文不删、可核对，但不再参与召回、扩散、残响和星图。
 - **星图是视图，不参与调度。** `web/sihai.html` 是纯手写透视投影，没有 three.js、没有外链，断网也能打开；图上的数字直接调用记忆层的同一组函数。
-- **本地 SQLite。** 记忆存在 `data/memory.db`，桌面、网页、手机共用同一份。写入闸门在 `app/mind.py` 的 `GROWTH_LOCKED`：当前代码默认打开（`False`），第一次真实对话就会写进去；只想先看界面，用 `desktop.cmd --demo`，或把它改成 `True`。
+- **本地 SQLite。** 记忆存在 `data/memory.db`，桌面、网页、手机共用同一份。写入闸门在 `app/mind.py` 的 `GROWTH_LOCKED`：当前代码默认不锁（`False`），第一次真实对话就会写进去；只想先看界面，用 `desktop.cmd --demo`，或把它改成 `True`。
 
 更细的模块与数据流见 [ARCHITECTURE.md](ARCHITECTURE.md)。
 
@@ -162,11 +162,12 @@ desktop.cmd --demo
 仓库不附带模型权重。人脸、语音识别和本地 TTS 按需下载。先装过 `-Voice`（它包含 `huggingface-hub`），或单独 `pip install huggingface-hub`：
 
 ```powershell
+# 用安装器创建的虚拟环境，避免跑到系统 Python
 # 人脸检测与特征模型
-python download_faces.py
+.\.venv\Scripts\python.exe download_faces.py
 
 # faster-whisper-small 语音识别
-python download_whisper.py
+.\.venv\Scripts\python.exe download_whisper.py
 ```
 
 默认下载到 `.\models`；可以用 `ROBOT_MODELS` 指到别的目录。模型来自 OpenCV、Systran 等第三方项目，使用前请遵守各自许可证。本地 VITS 声线不随仓库分发，见 [NOTICE.md](NOTICE.md)。
@@ -192,8 +193,9 @@ docs/               本地开发记录；默认不进入公开仓库
 
 ## 数据与隐私
 
-- 记忆、对话、人脸底库、截图在 `data/`，日记在 `diary/`；默认都不离开本机。
-- 项目没有遥测，不会把使用记录回传到作者这里。
+- 记忆文件、人脸底库、截图和日记只存在本机（`data/`、`diary/`），不会上传到作者这里。
+- 对话文本会发给**你配置的 LLM 服务商**，手机照片会发给**你配置的视觉模型**，TTS 文本会发给对应语音服务；这些是运行必需的外部请求，不是遥测。
+- 项目没有自建遥测，不会把使用记录回传到作者这里。
 - 需要联网的只有 LLM、可选的 TTS 服务和可选的模型下载。
 - `web.cmd` 的 `8766` 和身体的 `8768` 是局域网服务。它们不是公网服务；在不可信网络里请设置 `VALKYRIE_APP_TOKEN`，并确认防火墙只放行需要的网段。
 - 摄像头默认锁定（`VISION_LOCKED = True`），不会因为程序启动就打开。需要视觉时再显式解锁。

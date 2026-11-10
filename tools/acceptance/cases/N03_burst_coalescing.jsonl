@@ -1,0 +1,1 @@
+{"case_id":"N03","suite":"N","status":"disabled","disabled_reason":"由 tools/selftest_response_gate.py 执行；不插入现有三轮运行集","title":"连续输入：整批只回一次，defer 不自动延时发送","given":{"batch_open":true,"batch_complete":false,"events":["第一段","第二段","第三段"]},"expect":{"defer":true,"visible_replies_max":1,"defer_auto_send":false},"forbidden":{"empty_assistant_turns":0}}

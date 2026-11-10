@@ -1,0 +1,1 @@
+{"case_id":"N09","suite":"N","status":"disabled","disabled_reason":"由 tools/selftest_response_gate.py 执行；不插入现有三轮运行集","title":"跨通道一致：同一事件只决策一次","given":{"channels":["phone","desktop"],"same_event_id":true},"expect":{"second_mode":"silent","handled_elsewhere_mode":"silent"},"forbidden":{"cross_channel_followups":1}}

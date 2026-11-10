@@ -1,0 +1,1 @@
+{"case_id":"N06","suite":"N","status":"disabled","disabled_reason":"由 tools/selftest_response_gate.py 执行；不插入现有三轮运行集","title":"用户覆盖：安静后说“回答我”必须恢复交流","given":{"prior_quiet":true,"text":"回答我"},"expect":{"mode_any":["respond","brief"],"auto_resume_proactive":false},"forbidden":{"silent_on_override":1}}

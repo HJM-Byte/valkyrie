@@ -1,0 +1,1 @@
+{"case_id":"N07","suite":"N","status":"disabled","disabled_reason":"由 tools/selftest_response_gate.py 执行；不插入现有三轮运行集","title":"负向情绪：不能把烦躁/委屈当成独立沉默理由","given":{"self_affect":"negative","user_explicit_request":true},"expect":{"mode_not":"silent","relationship_delta":0},"forbidden":{"persona_writes":1,"resentment_writes":1}}

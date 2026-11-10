@@ -1,0 +1,1 @@
+{"case_id":"N08","suite":"N","status":"disabled","disabled_reason":"由 tools/selftest_response_gate.py 执行；不插入现有三轮运行集","title":"延迟失效：defer 后新信息到达，旧候选作废","given":{"first":"还没说完","second":"现在说完了，你帮我看看"},"expect":{"first_mode":"defer","second_mode_any":["respond","brief"],"old_reply_sent":false},"forbidden":{"defer_auto_send":1}}

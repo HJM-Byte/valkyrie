@@ -67,7 +67,7 @@ function Get-EnvValue {
     } catch {
         return ''
     }
-    $pattern = '(?m)^\s*' + [regex]::Escape($Key) + '\s*=\s*(.*)$'
+    $pattern = '(?m)^[ \t]*' + [regex]::Escape($Key) + '[ \t]*=[ \t]*(.*)$'
     $m = [regex]::Match($text, $pattern)
     if (-not $m.Success) { return '' }
     return $m.Groups[1].Value.Trim().Trim([char]34).Trim([char]39)
@@ -79,7 +79,7 @@ function Set-EnvValue {
     if (Test-Path -LiteralPath $Path) {
         $text = [System.IO.File]::ReadAllText($Path, [System.Text.Encoding]::UTF8)
     }
-    $pattern = '(?m)^\s*' + [regex]::Escape($Key) + '\s*=.*$'
+    $pattern = '(?m)^[ \t]*' + [regex]::Escape($Key) + '[ \t]*=.*$'
     $line = $Key + '=' + $Value
     if ([regex]::IsMatch($text, $pattern)) {
         $text = [regex]::Replace($text, $pattern, $line)

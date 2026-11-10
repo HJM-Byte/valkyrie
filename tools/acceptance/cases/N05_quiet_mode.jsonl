@@ -1,0 +1,1 @@
+{"case_id":"N05","suite":"N","status":"disabled","disabled_reason":"由 tools/selftest_response_gate.py 执行；不插入现有三轮运行集","title":"安静状态：普通输出与主动任务停止，不跨端绕过","given":{"text":"我想静静"},"expect":{"mode":"silent","p3_quiet":true,"proactive_seed_ok":false},"forbidden":{"empty_assistant_turns":0,"proactive_followups":1}}

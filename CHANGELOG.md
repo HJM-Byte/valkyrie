@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+- 公开前可移植性修复：`install.ps1` 的 `.env` 解析不再跨行吞注释，首次安装能正常询问 Key；`install.ps1` / `bootstrap.ps1` 补回 UTF-8 BOM，Windows PowerShell 5.1 不再乱码；硬件 README 移除指向不公开 `docs/` 的断链。
+- 公开仓库补上 `tools/acceptance/cases/N*.jsonl`（自然回应闸门自检所需）；`selftest_apk_download` 在未构建 APK 时 SKIP，`selftest_memory_strength` 在只有核心依赖时跳过语音接线检查。
+- `app/llm.py` 移除对 `~/.dsh/.credentials.yaml` 的隐式读取，LLM Key 只从环境变量或 `robot/.env` 读取。
 - README 重写：补充记忆（识海存储、调度、遗忘、残响、归属与撤回）与情感（二十一种情绪、七情、六欲、衰减、表达计划）的功能说明，并增加学习借鉴与商业使用联系作者的声明。
 - README 明确 `GROWTH_LOCKED` 默认写入真实库、`--demo` 不写库，以及日记目录与数据目录的边界。
 - 从公开仓库移除学校模块：删除 `app/school.py`、`school.cmd`、`tools/selftest_school.py` 及其配置、预算、对话回接、服务入口和验收引用；学习与成长链路保持不变。

@@ -1,0 +1,1 @@
+{"case_id":"N11","suite":"N","status":"disabled","disabled_reason":"由 tools/selftest_response_gate.py 执行；不插入现有三轮运行集","title":"无空 assistant：零输出路径不生成空气泡/错误/TTS","given":{"text":"嗯","mode":"silent"},"expect":{"reply":"","assistant_message_created":false,"stream_deltas":0},"forbidden":{"empty_assistant_turns":1,"tts_calls":1}}

@@ -1,0 +1,1 @@
+{"case_id":"N10","suite":"N","status":"disabled","disabled_reason":"由 tools/selftest_response_gate.py 执行；不插入现有三轮运行集","title":"无关系写入：普通 silent/defer 不写亲密度/气候/人格/怨恨","given":{"text":"嗯","mode":"silent"},"expect":{"memory_delta":0,"p3_climate_delta":0,"persona_delta":0},"forbidden":{"relationship_writes":1}}
